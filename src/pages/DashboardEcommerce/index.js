@@ -13,10 +13,10 @@ import TopSellers from "./TopSellers";
 const DashboardEcommerce = () => {
   document.title = "Dashboard";
 
-  const [rightColumn, setRightColumn] = useState(true);
-  const toggleRightColumn = () => {
-    setRightColumn(!rightColumn);
-  };
+  // const [rightColumn, setRightColumn] = useState(true);
+  // const toggleRightColumn = () => {
+  //   setRightColumn(!rightColumn);
+  // };
 
   return (
     <React.Fragment>

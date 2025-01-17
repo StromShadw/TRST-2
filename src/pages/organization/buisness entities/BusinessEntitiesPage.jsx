@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React,{ useState } from "react";
 import { Helmet } from "react-helmet";
 import { AiFillTool } from "react-icons/ai";
 import { MdArrowDropDown } from "react-icons/md";
@@ -18,7 +18,7 @@ const BusinessEntitiesPage = () => {
   };
 
   return (
-    <>
+    <React.Fragment>
       <Helmet>
         <title>Business Entities Page | TRST</title>
         <meta name="description" content="This is the home page description" />
@@ -111,7 +111,7 @@ const BusinessEntitiesPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 
