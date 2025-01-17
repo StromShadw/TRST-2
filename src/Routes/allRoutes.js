@@ -247,11 +247,24 @@ import SlopeCharts from "../pages/Charts/ApexCharts/SlopeCharts";
 import BlogListView from "../pages/Pages/Blogs/ListView";
 import BlogGridView from "../pages/Pages/Blogs/GridView";
 import PageBlogOverview from "../pages/Pages/Blogs/Overview";
-import ActionItem from "../pages/ActionItem/ActionItem";
+import BusinessEntitiesPage from "../pages/organization/buisness entities/BusinessEntitiesPage";
 
 const authProtectedRoutes = [
+  //home routes
   { path: '/admin-home', component: <h1>Admin Home Page</h1> },
-  { path: '/action-items', component: <ActionItem /> },
+  { path: '/action-items', component: <h1>ActionItem</h1> },
+
+  //Buisness entities
+  { path: '/business-entities', component: <BusinessEntitiesPage/> },
+
+
+
+
+
+
+
+
+  
   { path: "/dashboard-analytics", component: <DashboardAnalytics /> },
   { path: "/dashboard-crm", component: <DashboardCrm /> },
   { path: "/dashboard", component: <DashboardEcommerce /> },
