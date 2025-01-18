@@ -1,13 +1,13 @@
-import PageHeader from "../../../Components/PageHeader/PageHeader";
-
+import React from "react";
 
 function Employees() {
   return (
-    <div className="pb-3 relative px-2">
-      <PageHeader name="Employees" dropdownName="Employee"></PageHeader>
-    </div>
+    <React.Fragment>
+      <div className="page-content">
+        <h1>Employees</h1>
+      </div>
+    </React.Fragment>
   );
 }
 
 export default Employees;
-

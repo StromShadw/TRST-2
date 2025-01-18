@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Dropdown, DropdownMenu, DropdownToggle, Form } from 'reactstrap';
 
 //import images
-import logoSm from "../assets/images/darkLogo.png";
-import logoDark from "../assets/images/logo.jpg";
-import logoLight from "../assets/images/lightLogo.png";
+import logoSm from "../assets/images/TRST Logo_Transparent.png";
+import logoDark from "../assets/images/TRST Logo_Transparent.png";
+import logoLight from "../assets/images/TRST Logo_Transparent.png";
 
 //import Components
 import SearchOption from '../Components/Common/SearchOption';

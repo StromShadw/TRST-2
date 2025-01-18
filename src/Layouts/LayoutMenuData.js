@@ -157,8 +157,8 @@ const Navdata = () => {
             },
             childItems: [
               { id: "locations", label: "Locations", link: "/locations", parentId: "import" },
-              { id: "business-entities", label: "Business Entities", link: "/business-entities", parentId: "import" },
-              { id: "employees", label: "Employees", link: "/employees", parentId: "import" },
+              { id: "business-entities", label: "Business Entities", link: "/business-entities1", parentId: "import" },
+              { id: "employees", label: "Employees", link: "/employees1", parentId: "import" },
               {
                 id: "vendors",
                 label: "Vendors",
@@ -203,7 +203,7 @@ const Navdata = () => {
       updateIconSidebar(e);
     },
     subItems: [
-      { id: "business-entities1", label: "Business Entities", link: "/business-entities", parentId: "organization" },
+      { id: "business-entities1", label: "Organizational Entities", link: "/organizational-entities", parentId: "organization" },
       { id: "employees1", label: "Employees", link: "/employees", parentId: "organization" },
       { id: "locations1", label: "Locations", link: "/locations", parentId: "organization" },
       { id: "location-map", label: "Location Map", link: "/location-map", parentId: "organization" },
