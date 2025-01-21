@@ -41,6 +41,7 @@ import OrganizationalEntitiesPage from "../pages/Organization/OrganizationalEnti
 import OrganizationalEntityForm from "../pages/Organization/OrganizationalEntities/OrganizationalEntityForm/OrganizationalEntityForm.jsx";
 import Employees from "../pages/Organization/Employees/Employees";
 import Locations from "../pages/Organization/Locations/Locations.jsx";
+import NewEmployee from "../pages/Organization/Employees/NewEmployee.jsx";
 
 const authProtectedRoutes = [
   //home routes
@@ -50,7 +51,10 @@ const authProtectedRoutes = [
   //Buisness entities
   { path: '/organizational-entities', component: <OrganizationalEntitiesPage /> },
   { path: '/new-organizational-entities', component: <OrganizationalEntityForm/> },
+
   { path: '/employees', component: <Employees /> },
+  { path: '/new-employee', component: <NewEmployee/> },
+
   { path: '/locations', component: <Locations/> },
 
 
