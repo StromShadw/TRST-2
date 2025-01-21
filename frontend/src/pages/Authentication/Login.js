@@ -21,58 +21,70 @@ import { createSelector } from 'reselect';
 const Login = (props) => {
     const dispatch = useDispatch();
 
-    const selectLayoutState = (state) => state;
+    // Simplified selector using createSelector
     const loginpageData = createSelector(
-        selectLayoutState,
-        (state) => ({
-            user: state.Account.user,
-            error: state.Login.error,
-            loading: state.Login.loading,
-            errorMsg: state.Login.errorMsg,
+        state => state.Account.user,
+        state => state.Login.error,
+        state => state.Login.loading,
+        state => state.Login.errorMsg,
+        (user, error, loading, errorMsg) => ({
+            user, error, loading, errorMsg
         })
     );
-    // Inside your component
-    const {
-        user, error, loading, errorMsg
-    } = useSelector(loginpageData);
 
-    const [userLogin, setUserLogin] = useState([]);
+    const { user, error, loading, errorMsg } = useSelector(loginpageData);
     const [passwordShow, setPasswordShow] = useState(false);
 
-
+    // Remove unnecessary userLogin state
     useEffect(() => {
-        if (user && user.user) {  // Change this line to check for user.user
-            setUserLogin({
-                username: user.user.username,
-                password: userLogin.password
-            });
+        const token = sessionStorage.getItem('token');
+        const authUser = sessionStorage.getItem('authUser');
+        
+        if (token && authUser) {
+            props.router.navigate('/dashboard');
         }
-    }, [user]);
+    }, [props.router]);
 
     const validation = useFormik({
         enableReinitialize: true,
-
         initialValues: {
-            username: userLogin.username || "",
-            password: userLogin.password || "",
+            username: user?.user?.username || "",
+            password: user?.password || "",
         },
         validationSchema: Yup.object({
             username: Yup.string().required("Please Enter Your Username"),
             password: Yup.string().required("Please Enter Your Password"),
         }),
-        onSubmit: (values) => {
-            dispatch(loginUser(values, props.router.navigate));
+        onSubmit: async (values) => {
+            try {
+                const response = await dispatch(loginUser(values, props.router.navigate));
+                if (response?.payload?.token) {
+                    sessionStorage.setItem('token', response.payload.token);
+                    sessionStorage.setItem('authUser', JSON.stringify(response.payload.user));
+                    props.router.navigate('/dashboard');
+                }
+            } catch (error) {
+                console.error('Login failed:', error);
+            }
         }
     });
 
+    // Auto-dismiss error message
     useEffect(() => {
+        let timeoutId;
         if (errorMsg) {
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
                 dispatch(resetLoginFlag());
             }, 3000);
-        }   
+        }
+        return () => timeoutId && clearTimeout(timeoutId);
     }, [dispatch, errorMsg]);
-    document.title = "Login | TRST";
+
+    // Move title to useEffect
+    useEffect(() => {
+        document.title = "Login | TRST";
+    }, []);
+
     return (
         <React.Fragment>
             <ParticlesAuth>
@@ -98,7 +110,11 @@ const Login = (props) => {
                                             <h5 className="text-primary">Welcome Back !</h5>
                                             <p className="text-muted">Sign in to continue to TRST.</p>
                                         </div>
-                                        {error && error ? (<Alert color="danger"> {error} </Alert>) : null}
+                                        {error && error ? (
+                                            <Alert color="danger" timeout={3000}> 
+                                                {error} 
+                                            </Alert>
+                                        ) : null}
                                         <div className="p-2 mt-4">
                                             <Form
                                                 onSubmit={(e) => {
