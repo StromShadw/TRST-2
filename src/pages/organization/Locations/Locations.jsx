@@ -1,12 +1,11 @@
-import PageHeader from "../../../Components/PageHeader/PageHeader"
+import React from 'react'
 
-
-function Location() {
+function Locations() {
   return (
-    <div className="pb-3 relative px-2">
-      <PageHeader name="Locations" dropdownName="Location"></PageHeader>
+    <div className='page-content'>
+      Locations
     </div>
   )
 }
 
-export default Location
+export default Locations

@@ -68,17 +68,17 @@ const Login = (props) => {
         }
     });
 
-    const signIn = type => {
-        dispatch(socialLogin(type, props.router.navigate));
-    };
+    // const signIn = type => {
+    //     dispatch(socialLogin(type, props.router.navigate));
+    // };
 
     //handleTwitterLoginResponse
     // const twitterResponse = e => {}
 
     //for facebook and google authentication
-    const socialResponse = type => {
-        signIn(type);
-    };
+    // const socialResponse = type => {
+    //     signIn(type);
+    // };
 
 
     useEffect(() => {

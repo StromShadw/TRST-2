@@ -156,7 +156,7 @@ const Navdata = () => {
               setIsImport(!isImport);
             },
             childItems: [
-              { id: "locations", label: "Locations", link: "/locations", parentId: "import" },
+              { id: "locations", label: "Locations", link: "/locations1", parentId: "import" },
               { id: "business-entities", label: "Business Entities", link: "/business-entities1", parentId: "import" },
               { id: "employees", label: "Employees", link: "/employees1", parentId: "import" },
               {

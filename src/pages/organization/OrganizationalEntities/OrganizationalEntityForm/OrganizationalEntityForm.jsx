@@ -143,7 +143,7 @@ const OrganizationalEntityForm = () => {
                   name="businessEntityType"
                   value={formData.businessEntityType}
                   onChange={handleChange}
-                  className="form-select"
+                  className="form-selectl1"
                   required
                 >
                   <option value="">-- Please select --</option>
@@ -164,7 +164,7 @@ const OrganizationalEntityForm = () => {
                   name="businessEntity"
                   value={formData.businessEntity}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                   required
                 />
               </div>
@@ -181,7 +181,7 @@ const OrganizationalEntityForm = () => {
                   name="businessEntityId"
                   value={formData.businessEntityId}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                 />
               </div>
               <div className="mb-3 d-flex">
@@ -194,7 +194,7 @@ const OrganizationalEntityForm = () => {
                   name="editors"
                   value={formData.editors}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                 />
                 <button className="btn btn-secondary border-radius-2">
                   <BiSearchAlt2 />
@@ -209,7 +209,7 @@ const OrganizationalEntityForm = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                   rows="3"
                 ></textarea>
               </div>
@@ -227,7 +227,7 @@ const OrganizationalEntityForm = () => {
                   name="parentEntity"
                   value={formData.parentEntity}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                   required
                 />
                 <button className="btn btn-secondary border-radius-2">
@@ -247,7 +247,7 @@ const OrganizationalEntityForm = () => {
                   name="childEntities"
                   value={formData.childEntities}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                 />
                 <button className="btn btn-secondary border-radius-2">
                   <BiSearchAlt2 />
@@ -266,7 +266,7 @@ const OrganizationalEntityForm = () => {
                   name="relatedLocations"
                   value={formData.relatedLocations}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control1"
                 />
                 <button className="btn btn-secondary border-radius-2">
                   <BiSearchAlt2 />

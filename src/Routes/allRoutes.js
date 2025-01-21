@@ -6,10 +6,7 @@ import BasicSignIn from '../pages/AuthenticationInner/Login/BasicSignIn';
 import CoverSignIn from '../pages/AuthenticationInner/Login/CoverSignIn';
 import BasicSignUp from '../pages/AuthenticationInner/Register/BasicSignUp';
 import CoverSignUp from "../pages/AuthenticationInner/Register/CoverSignUp";
-import BasicPasswReset from '../pages/AuthenticationInner/PasswordReset/BasicPasswReset';
-
-import Maintenance from '../pages/Pages/Maintenance/Maintenance';
-import ComingSoon from '../pages/Pages/ComingSoon/ComingSoon';
+import BasicPasswReset from '../pages/AuthenticationInner/PasswordReset/BasicPasswReset';;
 
 import CoverPasswReset from '../pages/AuthenticationInner/PasswordReset/CoverPasswReset';
 import BasicLockScreen from '../pages/AuthenticationInner/LockScreen/BasicLockScr';
@@ -36,30 +33,25 @@ import Logout from "../pages/Authentication/Logout";
 import Register from "../pages/Authentication/Register";
 
 
-// Landing Index
-import OnePage from "../pages/Landing/OnePage";
-import NFTLanding from "../pages/Landing/NFTLanding";
-
-
-import JobLanding from "../pages/Job_Landing/Job";
-
 // User Profile
 import UserProfile from "../pages/Authentication/user-profile";
 
 
-import OrganizationalEntitiesPage from "../pages/organization/OrganizationalEntities/OrganizationalEntity/OrganizationalEntitiesPage.jsx";
-import OrganizationalEntityForm from "../pages/organization/OrganizationalEntities/OrganizationalEntityForm/OrganizationalEntityForm.jsx";
-import Employees from "../pages/organization/Employees/Employees";
+import OrganizationalEntitiesPage from "../pages/Organization/OrganizationalEntities/OrganizationalEntity/OrganizationalEntitiesPage.jsx";
+import OrganizationalEntityForm from "../pages/Organization/OrganizationalEntities/OrganizationalEntityForm/OrganizationalEntityForm.jsx";
+import Employees from "../pages/Organization/Employees/Employees";
+import Locations from "../pages/Organization/Locations/Locations.jsx";
 
 const authProtectedRoutes = [
   //home routes
-  { path: '/admin-home', component: <h1>Admin Home Page</h1> },
-  { path: '/action-items', component: <h1>ActionItem</h1> },
+  { path: '/admin-home', component: <h1 className="page-content">Admin Home Page</h1> },
+  { path: '/action-items', component: <h1 className="page-content">ActionItem</h1> },
 
   //Buisness entities
   { path: '/organizational-entities', component: <OrganizationalEntitiesPage /> },
   { path: '/new-organizational-entities', component: <OrganizationalEntityForm/> },
   { path: '/employees', component: <Employees /> },
+  { path: '/locations', component: <Locations/> },
 
 
 
@@ -103,12 +95,6 @@ const publicRoutes = [
   { path: "/auth-404-cover", component: <Cover404 /> },
   { path: "/auth-404-alt", component: <Alt404 /> },
   { path: "/auth-500", component: <Error500 /> },
-  { path: "/pages-maintenance", component: <Maintenance /> },
-  { path: "/pages-coming-soon", component: <ComingSoon /> },
-
-  { path: "/landing", component: <OnePage /> },
-  { path: "/nft-landing", component: <NFTLanding /> },
-  { path: "/job-landing", component: <JobLanding /> },
 
   { path: "/auth-pass-change-basic", component: <BasicPasswCreate /> },
   { path: "/auth-pass-change-cover", component: <CoverPasswCreate /> },
