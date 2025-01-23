@@ -33,11 +33,11 @@ const registerUser = asyncHandler(async (req, res) => {
     // check for creation
     // return response
 
-    const { fullName, username, email, password } = req.body;
+    const { fullName, username, email, password,role } = req.body;
     console.log(fullName, username, email, password);
 
     if (
-        [fullName, email, username, password].some((field) => field?.trim() === "")
+        [fullName, email, username, password,role].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fileds are required");
     }
@@ -78,6 +78,7 @@ const registerUser = asyncHandler(async (req, res) => {
         email,
         password,
         avatar: avatar?.url || "",
+        role: role || "user"
     })
 
     const createdUser = await User.findById(user._id).select(
@@ -103,7 +104,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { username, password } = req.body;
 
-    if (!username) {
+    if (!username) {inactive
         throw new ApiError(400, "Username is required");
     }
 
@@ -113,11 +114,21 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "User does not exist");
     }
 
+    // Check if user is suspended
+    if (user.workflowStatus === 'suspended') {
+        throw new ApiError(403, "Your account has been suspended. Please contact administrator.");
+    }
+
     const isPassword = await user.isPasswordCorrect(password);
 
     if (!isPassword) {
         throw new ApiError(401, "Password is incorrect");
     }
+
+    // Update user's workflowStatus to 'active' and set lastLoginAt
+    user.workflowStatus = 'active';
+    user.lastLoginAt = new Date();
+    await user.save({ validateBeforeSave: false });
 
     const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user._id)
 
@@ -147,6 +158,9 @@ const logoutUser = asyncHandler(async(req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
+            $set: {
+                workflowStatus: 'inactive'
+            },
             $unset: {
                 refreshToken: 1 // this removes the field from document
             }
@@ -246,30 +260,6 @@ const getCurrentUser = asyncHandler(async(req, res) => {
     ))
 })
 
-const updateAccountDetails = asyncHandler(async(req, res) => {
-    const {fullName, email} = req.body
-
-    if (!fullName || !email) {
-        throw new ApiError(400, "All fields are required")
-    }
-
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                fullName,
-                email: email
-            }
-        },
-        {new: true}
-        
-    ).select("-password")
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
-});
-
 const updateUserAvatar = asyncHandler(async(req, res) => {
     const avatarLocalPath = req.file?.path
 
@@ -303,6 +293,48 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
     )
 })
 
+const getAllUsers = asyncHandler(async(req, res) => {
+    const users = await User.find()
+        .select("-password -refreshToken")
+        .populate("updatedBy", "fullName email")
+        .sort("-createdAt");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            { data: users },
+            "Users fetched successfully"
+        ));
+});
+
+const updateAccountDetails = asyncHandler(async(req, res) => {
+    const { fullName, email } = req.body;
+
+    if (!fullName && !email) {
+        throw new ApiError(400, "At least one field is required for update");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                fullName: fullName || req.user.fullName,
+                email: email || req.user.email,
+                updatedBy: req.user._id // Track who made the update
+            }
+        },
+        { new: true, runValidators: true }
+    ).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            user,
+            "Account details updated successfully"
+        ));
+});
 
 export {
     registerUser,
@@ -313,4 +345,5 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
+    getAllUsers,
 }

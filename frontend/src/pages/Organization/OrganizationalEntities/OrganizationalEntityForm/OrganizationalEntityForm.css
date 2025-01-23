@@ -3,7 +3,8 @@
 } */
 .label {
   font-weight: 600;
-  font-size: larger;
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 .button3 {
@@ -27,13 +28,74 @@
 }
 
 .w-20{
-  width: 20%;
+  width: 28%;
 }
 
-.form-control1{
-  width: 40%;
+.form-control1 {
+  flex: 1;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin-right: 8px;
+  min-height: 38px;
+  padding: 6px 12px;
+  background-color: #fff;
+}
+
+.form-control1:focus-within {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  outline: 0;
 }
 
 .form-select1{
   width: 40%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.modal {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-dialog {
+  margin-top: 10vh;
+}
+
+.table-responsive {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.table td, .table th {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+
+.badge {
+  background-color: #f8f9fa !important;
+  border: 1px solid #ddd !important;
+  color: #212529 !important;
+  /* font-weight:  !important; */
+  font-size: 12px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.badge .btn-close {
+  padding: 0.25rem 0.25rem;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.badge .btn-close:hover {
+  background-color: #e9ecef;
 }

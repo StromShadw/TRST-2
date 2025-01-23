@@ -25,7 +25,7 @@
     "@vtaits/react-color-picker": "^1.0.2",
     "aos": "^2.3.4",
     "apexcharts": "^3.54.1",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "axios-mock-adapter": "^2.1.0",
     "bootstrap": "5.3.3",
     "chart.js": "^4.4.5",

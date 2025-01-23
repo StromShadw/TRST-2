@@ -107,20 +107,20 @@ const RightSidebar = (props) => {
         setOpen(!open);
     };
 
-    window.onscroll = function () {
-        scrollFunction();
-    };
+    // window.onscroll = function () {
+    //     scrollFunction();
+    // };
 
-    const scrollFunction = () => {
-        const element = document.getElementById("back-to-top");
-        if (element) {
-            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-                element.style.display = "block";
-            } else {
-                element.style.display = "none";
-            }
-        }
-    };
+    // const scrollFunction = () => {
+    //     const element = document.getElementById("back-to-top");
+    //     if (element) {
+    //         if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+    //             element.style.display = "block";
+    //         } else {
+    //             element.style.display = "none";
+    //         }
+    //     }
+    // };
 
     const toTop = () => {
         document.body.scrollTop = 0;
@@ -143,11 +143,11 @@ const RightSidebar = (props) => {
 
     return (
         <React.Fragment>
-            <button
+            {/* <button
                 onClick={() => toTop()}
                 className="btn btn-danger btn-icon" id="back-to-top">
                 <i className="ri-arrow-up-line"></i>
-            </button>
+            </button> */}
 
             {preloader === "enable" && <div id="preloader">
                 <div id="status">

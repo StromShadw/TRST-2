@@ -1,13 +1,13 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { BusinessEntity } from "../models/organizationalEntities.model.js";
+import { BusinessEntity, BUSINESS_ENTITY_TYPES } from "../models/organizationalEntities.model.js";
 
 const createOrganizationalEntity = asyncHandler(async (req, res) => {
     const {
         businessEntityType, 
+        businessEntityId,
         businessEntity, 
-        businessEntityId, 
         editors, 
         description, 
         parentBusinessEntity,
@@ -20,36 +20,52 @@ const createOrganizationalEntity = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All required fields must be provided")
     }
 
-    // Check if entity already exists
-    const existingEntity = await BusinessEntity.findOne({
-        $or: [
-            { businessEntity },
-            { businessEntityId }
-        ]
-    })
-
-    if (existingEntity) {
-        throw new ApiError(409, "Entity with this name or ID already exists")
+    // Check if businessEntityType is provided and valid
+    if (businessEntityType && !BUSINESS_ENTITY_TYPES.includes(businessEntityType)) {
+        throw new ApiError(400, "Invalid businessEntityType");
     }
 
-    // First, verify if the parent business entity exists and get its ID if provided
+    // Check if businessEntityId is provided and unique else stay empty
+    let businessEntityIdValue = businessEntityId || null; // Ensure it is explicitly set to null if not provided
+    if (businessEntityIdValue) {
+        const existingBusinessEntityId = await BusinessEntity.findOne({ businessEntityId: businessEntityIdValue });
+        if (existingBusinessEntityId) {
+            throw new ApiError(409, "businessEntityId must be unique");
+        }
+    }
+
+    // Check if entity already exists by name
+    const existingEntity = await BusinessEntity.findOne({ businessEntity });
+    if (existingEntity) {
+        throw new ApiError(409, "Entity with this name already exists");
+    }
+
+    // Check if the provided ID already exists in the request
+    if (req.body.id) {
+        throw new ApiError(400, "ID should not be provided for creating a new entity");
+    }
+
+    // First, verify if the parent business entity exists by name
     let parentEntityId = null;
+    let parentEntityName = null;
     if (parentBusinessEntity) {
         const parentEntity = await BusinessEntity.findOne({ businessEntity: parentBusinessEntity });
         if (!parentEntity) {
             throw new ApiError(404, "Parent business entity not found");
         }
-        parentEntityId = parentEntity._id;
+        parentEntityId = parentEntity._id; // Get the ObjectId of the found entity
+        parentEntityName = parentEntity.businessEntity; // Store the name if needed
     }
 
     // Convert string IDs to ObjectIds and handle arrays properly
     const formattedData = {
         businessEntityType,
+        businessEntityId: businessEntityIdValue,
         businessEntity,
-        businessEntityId,
         description,
         editors: editors?.length ? await BusinessEntity.find({ businessEntity: { $in: editors } }).distinct('_id') : [],
         parentBusinessEntity: parentEntityId, // Now can be null
+        parentBusinessEntityName: parentEntityName,
         childBusinessEntities: childBusinessEntities?.length ? 
             await BusinessEntity.find({ businessEntity: { $in: childBusinessEntities } }).distinct('_id') : [],
         relatedLocations: relatedLocations?.length ? relatedLocations.filter(id => id).map(id => id.toString()) : []
@@ -81,6 +97,21 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
     const existingEntity = await BusinessEntity.findById(id)
     if (!existingEntity) {
         throw new ApiError(404, "Organizational Entity not found")
+    }
+
+    // Check if the provided ID matches the entity being updated
+    if (updateData.id && updateData.id !== id) {
+        throw new ApiError(400, "ID cannot be changed");
+    }
+    
+    //check if buisnessEntityId is provided and unique
+    if (updateData.businessEntityId && updateData.businessEntityId !== existingEntity.businessEntityId) {
+        throw new ApiError(400, "businessEntityId cannot be changed");
+    }
+
+    // Check if businessEntityType is provided and valid
+    if (updateData.businessEntityType && !BUSINESS_ENTITY_TYPES.includes(updateData.businessEntityType)) {
+        throw new ApiError(400, "Invalid businessEntityType");
     }
 
     // Check for duplicate businessEntity name only if it's being changed
@@ -149,9 +180,21 @@ const getOrganizationalEntityDetails = asyncHandler(async (req, res) => {
     );
 });
 
+const getAllOrganizationalEntities = asyncHandler(async (req, res) => {
+    const entities = await BusinessEntity.find()
+        .populate('parentBusinessEntity', 'businessEntity businessEntityType businessEntityId description')
+        .populate('childBusinessEntities', 'businessEntity businessEntityType businessEntityId description')
+        .populate('editors', 'businessEntity businessEntityType businessEntityId');
+
+    return res.status(200).json(
+        new ApiResponse(200, entities, "Organizational Entities fetched successfully!")
+    );
+});
+
 export {
     createOrganizationalEntity,
     updateOrganizationalEntity,
     deleteOrganizationalEntity,
-    getOrganizationalEntityDetails
+    getOrganizationalEntityDetails,
+    getAllOrganizationalEntities
 }

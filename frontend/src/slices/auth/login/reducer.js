@@ -1,12 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export const initialState = {
-  user: null,
-  accessToken: null,
-  error: null,
+  user: {},
+  error: "", // for error message
   loading: false,
   isUserLogout: false,
-  errorMsg: false,
+  errorMsg: false, // for error
 };
 
 const loginSlice = createSlice({
@@ -14,20 +13,15 @@ const loginSlice = createSlice({
   initialState,
   reducers: {
     apiError(state, action) {
-      state.error = action.payload.message || "Login failed";
+      state.error = action.payload.data;
       state.loading = false;
       state.isUserLogout = false;
       state.errorMsg = true;
     },
     loginSuccess(state, action) {
-      state.user = action.payload.data.user;  // Store just the user object
-      state.accessToken = action.payload.data.accessToken;
+      state.user = action.payload
       state.loading = false;
       state.errorMsg = false;
-    },
-    loginRequest(state) {
-      state.loading = true;
-      state.error = null;
     },
     logoutUserSuccess(state, action) {
       state.isUserLogout = true
@@ -43,7 +37,6 @@ const loginSlice = createSlice({
 export const {
   apiError,
   loginSuccess,
-  loginRequest,
   logoutUserSuccess,
   reset_login_flag
 } = loginSlice.actions

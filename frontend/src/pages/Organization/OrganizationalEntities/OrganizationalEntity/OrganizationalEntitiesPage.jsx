@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet"; //head Customization
-import { NavLink } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { CiEdit } from "react-icons/ci";
+import axios from 'axios';
 
 //icons
 import { HiMiniWrench } from "react-icons/hi2";
@@ -11,7 +13,7 @@ import { LuRefreshCw, LuTableOfContents, LuClock9 } from "react-icons/lu";
 import { IoMdArrowDropdown, IoMdArrowDropright } from "react-icons/io";
 import { BiExport, BiSolidEdit } from "react-icons/bi";
 import { FcSettings } from "react-icons/fc";
-import { FaRegTrashCan, FaTableColumns, FaKey } from "react-icons/fa6";
+import { FaRegTrashCan, FaTableColumns, FaKey, FaEye } from "react-icons/fa6";
 import { TiExport, TiPlus } from "react-icons/ti";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { ImCopy } from "react-icons/im";
@@ -26,6 +28,11 @@ const OrganizationalEntitiesPage = () => {
   const [isColumnOpen, setIsColumnOpen] = useState(false);
   const [viewMode, setViewMode] = useState("map");
   const [selectedValue, setSelectedValue] = useState("50%");
+  const [rows, setRows] = useState([]);
+  const [checkedItems, setCheckedItems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Set the number of items per page
+  const navigate = useNavigate();
 
   const options = ["Fit", "50%", "75%", "100%", "125%", "150%", "200%"];
 
@@ -47,6 +54,130 @@ const OrganizationalEntitiesPage = () => {
   const handleSelect = (value) => {
     setSelectedValue(value);
     setIsOpen(false);
+  };
+
+  const handleCheckboxChange = (id) => {
+    setCheckedItems(prev => {
+      if (id === 'all') {
+        return prev.length === rows.length ? [] : rows.map(row => row.id);
+      }
+      return prev.includes(id)
+        ? prev.filter(item => item !== id)
+        : [...prev, id];
+    });
+  };
+
+  useEffect(() => {
+    fetchOrganizationalEntities();
+  }, []);
+
+  const fetchOrganizationalEntities = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/v1/organizational-entities/all', {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
+
+      if (response.data) {
+        const formattedRows = response.data.map((entity) => ({
+          id: entity._id,
+          businessEntity: entity.businessEntity || '',
+          entityType: entity.businessEntityType || '',
+          businessEntityId: entity.businessEntityId || '',
+          description: entity.description || '',
+          location: Array.isArray(entity.relatedLocations) ? entity.relatedLocations.join(', ') : '',
+          parentEntity: entity.parentBusinessEntity ? entity.parentBusinessEntity.businessEntity : '',
+          updatedAt: entity.updatedAt ? new Date(entity.updatedAt).toLocaleDateString() : '',
+          childEntities: Array.isArray(entity.childBusinessEntities) 
+            ? entity.childBusinessEntities.map(child => child.businessEntity).join(', ') 
+            : '',
+        }));
+
+        setRows(formattedRows);
+      } else {
+        console.error('No data received');
+        setRows([]);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
+      setRows([]);
+    }
+  };
+  
+  const handleEdit = (id) => {
+    navigate(`/organizational-entities/edit/${id}`);
+  };
+
+  const handleBulkDelete = async () => {
+    if (checkedItems.length === 0) return;
+    
+    if (window.confirm(`Are you sure you want to delete ${checkedItems.length} selected item(s)?`)) {
+      try {
+        // Delete all checked items
+        await Promise.all(
+          checkedItems.map(id =>
+            axios.delete(`http://localhost:8000/api/v1/organizational-entities/${id}`, {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              withCredentials: true
+            })
+          )
+        );
+        
+        // Clear checked items and refresh the list
+        setCheckedItems([]);
+        fetchOrganizationalEntities();
+      } catch (error) {
+        console.error('Error deleting entities:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
+      }
+    }
+  };
+
+  const handleView = (id) => {
+    // Implement the logic to handle view action
+    console.log(`Viewing entity with ID: ${id}`);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm(`Are you sure you want to delete this entity?`)) {
+      try {
+        await axios.delete(`http://localhost:8000/api/v1/organizational-entities/${id}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        });
+        fetchOrganizationalEntities(); // Refresh the list after deletion
+      } catch (error) {
+        console.error('Error deleting entity:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
+      }
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchOrganizationalEntities(); // Call to refresh data
+  };
+
+  // Calculate the current rows to display based on pagination
+  const indexOfLastRow = currentPage * itemsPerPage;
+  const indexOfFirstRow = indexOfLastRow - itemsPerPage;
+  const currentRows = rows.slice(indexOfFirstRow, indexOfLastRow);
+
+  // Function to handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
@@ -334,7 +465,7 @@ const OrganizationalEntitiesPage = () => {
                 <button className="button border-1 ms-1">
                   <FaHome style={{ width: "15px", height: "15px" }} />
                 </button>
-                <button className="button border-1 ms-1">
+                <button className="button border-1 ms-1" onClick={handleRefresh}>
                   <LuRefreshCw style={{ width: "18px", height: "18px" }} />
                 </button>
                 <span className="dropdown">
@@ -412,7 +543,15 @@ const OrganizationalEntitiesPage = () => {
                   <TiPlus style={{ width: "20px", height: "20px" }} />{" "}
                   Organizational Entity
                 </NavLink>
-                <button className="button border-1 ms-1">
+                <button 
+                  className="button border-1 ms-1" 
+                  style={{ 
+                    opacity: checkedItems.length > 0 ? 1 : 0.5,
+                    cursor: checkedItems.length > 0 ? 'pointer' : 'default'
+                  }}
+                  onClick={handleBulkDelete}
+                  disabled={checkedItems.length === 0}
+                >
                   <FaRegTrashCan style={{ width: "18px", height: "18px" }} />
                 </button>
                 <button className="button border-1 ms-1">
@@ -426,6 +565,75 @@ const OrganizationalEntitiesPage = () => {
           </div>
         )}
         <div className="border-1 mt-2"></div>
+        {viewMode === "list" && (
+          <div className="table-responsive">
+            <table className="table table-hover">
+              <thead>
+                <tr>
+                  <th>
+                    <input 
+                      type="checkbox" 
+                      onChange={() => handleCheckboxChange('all')}
+                      checked={checkedItems.length === rows.length && rows.length > 0}
+                    />
+                  </th>
+                  <th>Actions</th>
+                  <th>Business Entity</th>
+                  <th>Business Entity Type</th>
+                  <th>Related Locations</th>
+                  <th>Parent Business Entity</th>
+                  <th>Child Business Entities</th>
+                  <th>Updated At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <input 
+                        type="checkbox"
+                        checked={checkedItems.includes(row.id)}
+                        onChange={() => handleCheckboxChange(row.id)}
+                      />
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <CiEdit
+                          style={{ cursor: 'pointer', color: 'green' }}
+                          title="Edit"
+                          onClick={() => handleEdit(row.id)}
+                        />
+                        <RiDeleteBin6Line
+                          style={{ cursor: 'pointer', color: 'red' }}
+                          title="Delete"
+                          onClick={() => handleDelete(row.id)}
+                        />
+                      </div>
+                    </td>
+                    <td>{row.businessEntity}</td>
+                    <td>{row.entityType}</td>
+                    <td>{row.location}</td>
+                    <td>{row.parentEntity}</td>
+                    <td>{row.childEntities}</td>
+                    <td>{row.updatedAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Pagination Controls */}
+            <div className="pagination">
+              {Array.from({ length: Math.ceil(rows.length / itemsPerPage) }, (_, index) => (
+                <button 
+                  key={index + 1} 
+                  onClick={() => handlePageChange(index + 1)}
+                  className={currentPage === index + 1 ? 'active' : ''}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </React.Fragment>
   );

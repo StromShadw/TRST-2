@@ -32,6 +32,24 @@ const userSchema = new Schema(
             unique: true,
             required: [true, 'Password is required'],
         },
+        role: {
+            type: String,
+            enum: ['no access', 'administrator'],
+            default: 'user'
+        },
+        workflowStatus: {
+            type: String,
+            enum: ['active', 'pending', 'suspended', 'inactive'],
+            default: 'inactive'
+        },
+        lastLoginAt: {
+            type: Date,
+            default: null
+        },
+        updatedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
         // refreshToken:{
         //     type: String,
         // }
