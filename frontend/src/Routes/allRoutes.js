@@ -32,12 +32,14 @@ import Logout from "../pages/Authentication/Logout";
 // User Profile
 import UserProfile from "../pages/Authentication/user-profile";
 
-
+//Organization Routes
 import OrganizationalEntitiesPage from "../pages/Organization/OrganizationalEntities/OrganizationalEntity/OrganizationalEntitiesPage.jsx";
 import OrganizationalEntityForm from "../pages/Organization/OrganizationalEntities/OrganizationalEntityForm/OrganizationalEntityForm.jsx";
 import Employees from "../pages/Organization/Employees/Employees";
-import Locations from "../pages/Organization/Locations/Locations.jsx";
 import NewEmployee from "../pages/Organization/Employees/NewEmployee.jsx";
+import Locations from "../pages/Organization/Locations/Locations.jsx";
+import NewLocation from "../pages/Organization/Locations/NewLocation.jsx";
+
 
 const authProtectedRoutes = [
   //home routes
@@ -52,6 +54,7 @@ const authProtectedRoutes = [
   { path: '/new-employee', component: <NewEmployee/> },
 
   { path: '/locations', component: <Locations/> },
+  { path: '/new-location', component: <NewLocation/> },
 
 
 
