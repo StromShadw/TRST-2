@@ -24,10 +24,12 @@ app.use(cookieParser());
 //Routes import
 import userRouter from './routes/user.routes.js';
 import organizationalEntitiesRouter from './routes/organizationalEntities.routes.js';
+import employeesRouter from './routes/employees.routes.js';
 
 
 //Routes declaration
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/organizational-entities', organizationalEntitiesRouter);
+app.use('/api/v1/employees', employeesRouter);
 
 export { app };

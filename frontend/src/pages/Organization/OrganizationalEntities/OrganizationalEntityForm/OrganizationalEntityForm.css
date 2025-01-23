@@ -63,7 +63,6 @@
 }
 
 .table-responsive {
-  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -99,3 +98,14 @@
 .badge .btn-close:hover {
   background-color: #e9ecef;
 }
+
+.pagination button {
+  background-color: #FF914D ;
+  color: white;
+  border-color: #002955;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-right: 5px;
+  padding: 5px 5px;
+}
+

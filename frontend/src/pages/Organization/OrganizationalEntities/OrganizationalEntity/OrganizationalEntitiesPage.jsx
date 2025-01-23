@@ -31,7 +31,8 @@ const OrganizationalEntitiesPage = () => {
   const [rows, setRows] = useState([]);
   const [checkedItems, setCheckedItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Set the number of items per page
+  const itemsPerPage = 9; // Set the number of items per page
+
   const navigate = useNavigate();
 
   const options = ["Fit", "50%", "75%", "100%", "125%", "150%", "200%"];
@@ -89,9 +90,16 @@ const OrganizationalEntitiesPage = () => {
           description: entity.description || '',
           location: Array.isArray(entity.relatedLocations) ? entity.relatedLocations.join(', ') : '',
           parentEntity: entity.parentBusinessEntity ? entity.parentBusinessEntity.businessEntity : '',
-          updatedAt: entity.updatedAt ? new Date(entity.updatedAt).toLocaleDateString() : '',
-          childEntities: Array.isArray(entity.childBusinessEntities) 
-            ? entity.childBusinessEntities.map(child => child.businessEntity).join(', ') 
+          updatedAt: entity.updatedAt ? new Date(entity.updatedAt).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+          }) : '',
+          childEntities: Array.isArray(entity.childBusinessEntities)
+            ? entity.childBusinessEntities.map(child => child.businessEntity).join(' | ')
             : '',
         }));
 
@@ -108,14 +116,14 @@ const OrganizationalEntitiesPage = () => {
       setRows([]);
     }
   };
-  
+
   const handleEdit = (id) => {
     navigate(`/organizational-entities/edit/${id}`);
   };
 
   const handleBulkDelete = async () => {
     if (checkedItems.length === 0) return;
-    
+
     if (window.confirm(`Are you sure you want to delete ${checkedItems.length} selected item(s)?`)) {
       try {
         // Delete all checked items
@@ -129,7 +137,7 @@ const OrganizationalEntitiesPage = () => {
             })
           )
         );
-        
+
         // Clear checked items and refresh the list
         setCheckedItems([]);
         fetchOrganizationalEntities();
@@ -200,9 +208,8 @@ const OrganizationalEntitiesPage = () => {
               <span
                 aria-pressed={viewMode === "map"}
                 role="button"
-                className={`k-button ${
-                  viewMode === "map" ? "k-state-active" : ""
-                }`}
+                className={`k-button ${viewMode === "map" ? "k-state-active" : ""
+                  }`}
                 onClick={() => handleViewModeChange("map")}
               >
                 Map
@@ -210,9 +217,8 @@ const OrganizationalEntitiesPage = () => {
               <span
                 aria-pressed={viewMode === "list"}
                 role="button"
-                className={`k-button ${
-                  viewMode === "list" ? "k-state-active" : ""
-                }`}
+                className={`k-button ${viewMode === "list" ? "k-state-active" : ""
+                  }`}
                 onClick={() => handleViewModeChange("list")}
               >
                 List
@@ -230,9 +236,8 @@ const OrganizationalEntitiesPage = () => {
                   <HiMiniWrench style={{ width: "16px", height: "16px" }} />
                 </button>
                 <ul
-                  className={`dropdown-menu right-auto ${
-                    isToolOpen ? "show" : ""
-                  }`}
+                  className={`dropdown-menu right-auto ${isToolOpen ? "show" : ""
+                    }`}
                   aria-labelledby="TollFropdown"
                 >
                   <li>
@@ -489,7 +494,7 @@ const OrganizationalEntitiesPage = () => {
                   >
                     <li className="align-items-center justify-content-between d-flex me-1 ms-1">
                       <span className="fw-bold">Columns</span>
-                      <button className="blue" title="Reset">
+                      <button className="blue reset-btn" title="Reset">
                         Reset
                       </button>
                     </li>
@@ -543,9 +548,9 @@ const OrganizationalEntitiesPage = () => {
                   <TiPlus style={{ width: "20px", height: "20px" }} />{" "}
                   Organizational Entity
                 </NavLink>
-                <button 
-                  className="button border-1 ms-1" 
-                  style={{ 
+                <button
+                  className="button border-1 ms-1"
+                  style={{
                     opacity: checkedItems.length > 0 ? 1 : 0.5,
                     cursor: checkedItems.length > 0 ? 'pointer' : 'default'
                   }}
@@ -564,15 +569,15 @@ const OrganizationalEntitiesPage = () => {
             </div>
           </div>
         )}
-        <div className="border-1 mt-2"></div>
+        <div className="border-1 mt-2 mb-2"></div>
         {viewMode === "list" && (
           <div className="table-responsive">
             <table className="table table-hover">
               <thead>
                 <tr>
                   <th>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       onChange={() => handleCheckboxChange('all')}
                       checked={checkedItems.length === rows.length && rows.length > 0}
                     />
@@ -590,7 +595,7 @@ const OrganizationalEntitiesPage = () => {
                 {currentRows.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <input 
+                      <input
                         type="checkbox"
                         checked={checkedItems.includes(row.id)}
                         onChange={() => handleCheckboxChange(row.id)}
@@ -621,16 +626,24 @@ const OrganizationalEntitiesPage = () => {
               </tbody>
             </table>
             {/* Pagination Controls */}
-            <div className="pagination">
-              {Array.from({ length: Math.ceil(rows.length / itemsPerPage) }, (_, index) => (
-                <button 
-                  key={index + 1} 
-                  onClick={() => handlePageChange(index + 1)}
-                  className={currentPage === index + 1 ? 'active' : ''}
-                >
-                  {index + 1}
-                </button>
-              ))}
+            <div className="pagination pagination-bottom d-flex align-items-center justify-content-between">
+              <button 
+                className="pagination-btn" 
+                onClick={() => handlePageChange(currentPage - 1)} 
+                disabled={currentPage === 1}
+              >
+                <IoMdArrowDropright style={{ transform: 'rotate(180deg)', width: '20px', height: '20px' }} />
+              </button>
+              <span className="pagination-text me-2">
+                Page {currentPage} of {Math.ceil(rows.length / itemsPerPage)}
+              </span>
+              <button 
+                className="pagination-btn" 
+                onClick={() => handlePageChange(currentPage + 1)} 
+                disabled={currentPage === Math.ceil(rows.length / itemsPerPage)}
+              >
+                <IoMdArrowDropright style={{ width: '20px', height: '20px' }} />
+              </button>
             </div>
           </div>
         )}

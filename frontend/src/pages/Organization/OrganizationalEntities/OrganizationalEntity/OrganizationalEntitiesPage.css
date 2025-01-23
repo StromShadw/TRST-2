@@ -154,8 +154,24 @@ button {
 .table thead th {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
+  font-size: 12px;
 }
 
 .table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.075);
+}
+
+.reset-btn{
+  background: transparent;
+  border: none;
+}
+
+.pagination-bottom {
+  position: absolute;
+  bottom: 70px;
+}
+
+.pagination button.active {
+  background-color: #007bff;
+  color: white;
 }

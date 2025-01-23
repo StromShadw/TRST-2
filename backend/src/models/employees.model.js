@@ -1,59 +1,102 @@
-import mongoose,{Schema, SchemaType} from 'mongoose';
+import mongoose from 'mongoose';
 
-
-const EmployeeSchema = new Schema(
-    {
-        id:{
-            type:Number,
-            required:true,
-        },
-        employeeName:{
-            type:String,
-            required:true,
-        },
-        firstName:{
-            type:String,
-            required:true,
-        },
-        lastName:{
-            type:String,
-            required:true,
-        },
-        employeeId:{
-            type:String,
-        },
-        workEmail:{
-            type:String,
-        },
-        homePhoneNumber:{
-            type:Number,
-        },
-        workMobilePhone:{
-            type:Number,
-        },
-        workPhone:{
-            type:Number,
-        },
-        personalMobilePhone:{
-            type:Number,
-        },
-        Department:{
-            type:String,
-        },
-        portalUser:{
-            type:Boolean,
-        },
-        portalLoginName:{
-            type:String,
-        },
-        updatedBy:{
-            type:Schema.Types.ObjectId,
-            ref:'User',
-        }
+const employeeSchema = new mongoose.Schema({
+    // Work Contact Information
+    employeeID: {
+        type: String,
+        required: true
     },
-    {timestamps:true}
-);
+    firstName: {
+        type: String,
+        required: true
+    },
+    middleName: {
+        type: String
+    },
+    lastName: {
+        type: String,
+        required: true
+    },
+    preferredName: {
+        type: String
+    },
+    title: {
+        type: String
+    },
+    timeZone: {
+        type: String
+    },
+    workEmailAddress: {
+        type: String,
+        required: true
+    },
+    workPhone: {
+        type: String
+    },
+    workMobilePhone: {
+        type: String
+    },
+    fax: {
+        type: String
+    },
+    manager: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Employee"
+    },
+    subordinates: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Employee"
+    }],
+    employeeStatus: {
+        type: String,
+        enum: ['Active', 'Terminated']
+    }, // Add statuses based on your app's needs
 
+    // Organization
+    location: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Location"
+    },
+    department: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "BusinessEntity"
+    }],
+    departmentNames: [{
+        type: String
+    }],
 
-const Employee = mongoose.model('Employee',EmployeeSchema);
-export default Employee;
+    // Personal Contact Information
+    streetAddress1: {
+        type: String
+    },
+    streetAddress2: {
+        type: String
+    },
+    city: {
+        type: String
+    },
+    zipPostalCode: {
+        type: String
+    },
+    stateProvince: {
+        type: String
+    },
+    country: {
+        type: String
+    },
+    homePhoneNumber: {
+        type: String
+    },
+    personalMobilePhone: {
+        type: String
+    },
+    personalEmailAddress: {
+        type: String
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    }
+}, { timestamps: true });
+
+export default mongoose.model('Employee', employeeSchema);

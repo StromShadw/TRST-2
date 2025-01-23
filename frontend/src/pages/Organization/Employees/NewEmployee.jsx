@@ -9,8 +9,10 @@ import { FcSettings } from "react-icons/fc";
 import { LuTableOfContents, LuClock9 } from "react-icons/lu";
 import { FaPrint, FaRegFilePdf } from "react-icons/fa";
 import { IoIosSearch } from "react-icons/io";
+import { BiRefresh } from "react-icons/bi";
 import { Card, CardBody, Col, Container, Input, Label, Row, Button, Form, FormFeedback, Alert, Spinner } from 'reactstrap';
 import "./Employees.css";
+import axios from "axios";
 
 function NewEmployee() {
     const [isToolOpen, setIsToolOpen] = useState(false);
@@ -22,7 +24,11 @@ function NewEmployee() {
     const [selectedCountry, setSelectedCountry] = useState('-- Please select --');
     const [isStateOpen, setIsStateOpen] = useState(false); // Add missing state toggle
     const [isCountryOpen, setIsCountryOpen] = useState(false); // Add missing state toggle
-
+    const [searchResults, setSearchResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     const timeZoneOptions = [
         '-- Please select --',
@@ -55,7 +61,6 @@ function NewEmployee() {
         'Australia'
     ];
 
-
     // Dropdown toggles
     const toggleToolDropDown = () => setIsToolOpen(!isToolOpen);
     const toggleTimeZoneDropdown = () => setIsTimeZoneOpen(prev => !prev);
@@ -81,6 +86,68 @@ function NewEmployee() {
         setSelectedCountry(option);
         setIsCountryOpen(false);
     };
+    
+    const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+        return (
+          <div className="pagination d-flex justify-content-center align-items-center">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              &lt; {/* Previous */}
+            </button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              &gt; {/* Next */}
+            </button>
+          </div>
+        );
+      };
+
+    const fetchBusinessEntities = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('http://localhost:8000/api/v1/organizational-entities/all', {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                withCredentials: true
+            });
+            setSearchResults((response.data || []).map(entity => ({
+                ...entity,
+                selected: false
+            })));
+        } catch (error) {
+            console.error('Error fetching business entities:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDepartmentSearch = () => {
+        setShowModal(true);
+        fetchBusinessEntities();
+    };
+
+    const handleEntitySelect = (entity) => {
+        // Add your logic here to handle the selected entity
+        setShowModal(false);
+    };
+    // Calculate the current items to display
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentEntities = searchResults.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(searchResults.length / itemsPerPage);
+
+    // Add page change handler
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
 
     return (
         <React.Fragment>
@@ -95,7 +162,7 @@ function NewEmployee() {
                         <div className="header-text">Employees: New Employee</div>
                         <div className="d-flex align-items-center justify-content-end">
                             <div>
-                                <NavLink className="button3 border-1 button3-changes me-1" to="#" title="Save">
+                                <NavLink className="button3 border-1 button3-changes me-1" to="/employees" title="Save">
                                     <RxCross2 className="me-1" style={{ width: "15px", height: "15px" }} />Cancel
                                 </NavLink>
                                 <NavLink className="button3 border-1 button3-changes me-1" to="#" title="Save">
@@ -185,7 +252,7 @@ function NewEmployee() {
                                     <div className="mb-3 d-flex align-items-center" key={index}>
                                         <Label htmlFor={label} className="form-label me-4 fs-15 w-40">{label}</Label>
                                         <Input name="text" className="form-control" type="text" />
-                                        <button className="p-7 form-button"><IoIosSearch/></button>
+                                        <button className="p-7 form-button"><IoIosSearch /></button>
                                     </div>
                                 ))}
                                 <div className="mb-3 d-flex align-items-center">
@@ -240,7 +307,14 @@ function NewEmployee() {
                                 {['Department'].map((label, index) => (
                                     <div className="mb-3 d-flex align-items-center" key={index}>
                                         <Label htmlFor={label} className="form-label me-4 fs-15 w-40">{label}</Label>
-                                        <Input name="text" className="form-control" type="text" />  <button className="p-7 form-button"><IoIosSearch/></button>
+                                        <Input name="text" className="form-control" type="text" />
+                                        <button
+                                            className="p-7 form-button"
+                                            onClick={handleDepartmentSearch}
+                                            type="button"
+                                        >
+                                            <IoIosSearch />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -331,6 +405,92 @@ function NewEmployee() {
                     </Form>
                 </div>
             </div>
+
+            {showModal && (
+                <div className="modal show d-block" tabIndex="-1">
+                    <div className="modal-dialog modal-xl">
+                        <div className="modal-content">
+                            <div className="modal-header d-flex justify-content-between align-items-center">
+                                <h5 className="modal-title">Select Business Entity</h5>
+                                <div className="d-flex gap-2 align-items-center">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => fetchBusinessEntities()}
+                                        title="Refresh"
+                                    >
+                                        <BiRefresh />
+                                    </button>
+                                    {/* Remove the close button */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => setShowModal(false)}
+                                        title="Close"
+                                    >
+                                        <RxCross2 />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="modal-body">
+                                {loading ? (
+                                    <div className="text-center">Loading...</div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Actions</th>
+                                                    <th>Business Entity</th>
+                                                    <th>Business Entity Type</th>
+                                                    <th>Related Locations</th>
+                                                    <th>Parent Business Entity</th>
+                                                    <th>Child Business Entities</th>
+                                                    <th>Updated At</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {currentEntities.map((entity, index) => (
+                                                    <tr key={index}>
+                                                        <td>
+                                                            <button
+                                                                className="btn btn-sm btn-primary"
+                                                                onClick={() => handleEntitySelect(entity)}
+                                                            >
+                                                                Select
+                                                            </button>
+                                                        </td>
+                                                        <td>{entity.businessEntity}</td>
+                                                        <td>{entity.businessEntityType}</td>
+                                                        <td>{entity.relatedLocations}</td>
+                                                        <td>{entity.parentBusinessEntity?.businessEntity || ''}</td>
+                                                        <td>{entity.childBusinessEntities.map(child => child.businessEntity).join(' | ')}</td>
+                                                        <td>{new Date(entity.updatedAt).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {/* Pagination Controls */}
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={handlePageChange}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            {/* <div className="modal-footer"> */}
+                            {/* Remove the close button */}
+                            {/* <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button> */}
+
+                            {/* Add the Select button */}
+                            {/* <button onClick={handleSelectEntities}>Select</button>
+                <button onClick={handleClose}>Close</button> */}
+                            {/* </div> */}
+                        </div>
+                    </div>
+                </div>
+            )}
         </React.Fragment>
     );
 }

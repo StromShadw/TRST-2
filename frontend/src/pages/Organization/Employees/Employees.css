@@ -104,10 +104,10 @@ button {
 }
 
 .main-content1 .btn {
-    padding-right: 5px !important;
-    padding-left: 5px !important;
+    padding-right: 10px !important;
+    padding-left: 10px !important;
     padding-top: 6px;
-    padding-bottom: 4px;
+    padding-bottom: 6px;
 }
 
 .btn-secondary {

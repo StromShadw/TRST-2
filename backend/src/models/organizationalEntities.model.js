@@ -37,15 +37,19 @@ const businessEntitySchema = new mongoose.Schema({
     relatedLocations: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Location"
-    }]
+    }],
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    }
 }, {
     timestamps: true
 })
 
 // Update the updatedAt timestamp before saving
-businessEntitySchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+businessEntitySchema.pre('save', function (next) {
+    this.updatedAt = Date.now();
+    next();
 });
 
 export const BusinessEntity = mongoose.model("BusinessEntity", businessEntitySchema)

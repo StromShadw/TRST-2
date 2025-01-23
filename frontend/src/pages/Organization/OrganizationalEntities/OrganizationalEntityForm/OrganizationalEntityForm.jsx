@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 // Icons
 import { FaCheck } from "react-icons/fa";
@@ -16,8 +18,28 @@ import { FaPrint } from "react-icons/fa6";
 import "./OrganizationalEntityForm.css";
 
 // Add this constant at the top of the file after imports
-const ORGANIZATIONAL_ENTITY_TYPES = ['Company', 'Department', 'Division', 'Group'];
 const BUSINESS_ENTITY_TYPES = ['Company', 'Department', 'Division', 'Group'];
+
+// Pagination Component
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  return (
+    <div className="pagination d-flex justify-content-center align-items-center">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        &lt; {/* Previous */}
+      </button>
+      <span>Page {currentPage} of {totalPages}</span>
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        &gt; {/* Next */}
+      </button>
+    </div>
+  );
+};
 
 const OrganizationalEntityForm = () => {
   const navigate = useNavigate();
@@ -32,13 +54,15 @@ const OrganizationalEntityForm = () => {
     childEntities: [],
     relatedLocations: "",
   });
-  const [showModal, setShowModal] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [users, setUsers] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [currentField, setCurrentField] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Number of items to show per page
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,15 +71,21 @@ const OrganizationalEntityForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      // Validate business entity type
-      if (!BUSINESS_ENTITY_TYPES.includes(formData.businessEntityType)) {
-        alert("Invalid business entity type");
-        return;
-      }
 
-      // Prepare the data
+    // New validation for required fields
+    if (!formData.businessEntityType || !formData.businessEntity) {
+      Toastify({
+        text: "Business Entity Type and Name are required",
+        duration: 3000,
+        backgroundColor: "#f44336",
+        close: true,
+      }).showToast();
+      return;
+    }
+
+    setLoading(true);
+
+    try {
       const payload = {
         businessEntityType: formData.businessEntityType,
         businessEntity: formData.businessEntity,
@@ -64,41 +94,59 @@ const OrganizationalEntityForm = () => {
         parentBusinessEntity: formData.parentEntity[0] || "",
         editors: formData.editors,
         childBusinessEntities: formData.childEntities || [],
-        relatedLocations: formData.relatedLocations || []
+        relatedLocations: formData.relatedLocations || [],
       };
 
-      // Make API call
-      const response = await axios.post('http://localhost:8000/api/v1/organizational-entities/create', payload);
-      
-      if (response.data.success) {
-        alert("Entity created successfully!");
-        // Reset form or redirect
-        setFormData({
-          businessEntityType: "",
-          businessEntity: "",
-          businessEntityId: "",
-          editors: [],
-          description: "",
-          parentEntity: [],
-          childEntities: [],
-          relatedLocations: "",
-        });
-        navigate('/organizational-entities');
-      } else {
-        // Handle case where success is false
-        // alert("Failed to create entity: " + (response.data.message || "Unknown error"));
-        navigate('/organizational-entities');
-      }
+      const response = await axios.post(
+        "http://localhost:8000/api/v1/organizational-entities/create",
+        payload
+      );
+
+      Toastify({
+        text: "Entity created successfully!",
+        duration: 3000,
+        backgroundColor: "#4caf50",
+        close: true,
+      }).showToast();
+      navigate("/organizational-entities");
+      setFormData({
+        businessEntityType: "",
+        businessEntity: "",
+        businessEntityId: "",
+        editors: [],
+        description: "",
+        parentEntity: [],
+        childEntities: [],
+        relatedLocations: "",
+      });
     } catch (error) {
-      console.error('Error creating entity:', error);
-      navigate('/organizational-entities');
-      // if (error.response) {
-      //   console.error('Response data:', error.response.data);
-      //   const errorMessage = error.response.data.message || "An unexpected error occurred. Please try again.";
-      //   alert(errorMessage);
-      // } else {
-      //   alert("An unexpected error occurred. Please try again.");
-      // }
+      console.log("Error:", error);
+      let errorMessage = "Check your all fields. and try again.";
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            errorMessage = error.response.data.message || "Bad Request. Please check your input.";
+            break;
+          case 409:
+            errorMessage = error.response.data.message || "Conflict. The entity may already exist. Please use a different name and id.";
+            break;
+          case 404:
+            errorMessage = error.response.data.message || "Not Found. The requested resource does not exist.";
+            break;
+          // Add more cases as needed for other status codes
+          default:
+            errorMessage = error.response.data.message || errorMessage;
+        }
+      }
+
+      Toastify({
+        text: errorMessage,
+        duration: 3000,
+        backgroundColor: "#f44336",
+        close: true,
+      }).showToast();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -206,6 +254,12 @@ const OrganizationalEntityForm = () => {
 
   const handleSelectEntities = () => {
     const selectedEntities = searchResults.filter(entity => entity.selected);
+    setFormData({
+      ...formData,
+      parentEntity: selectedEntities.map(entity => entity.businessEntity),
+      childEntities: selectedEntities.map(entity => entity.businessEntity)
+    });
+    setShowModal(false);
     // Add your logic here to handle the selected entities
     console.log(selectedEntities); // Example: log the selected entities
   };
@@ -213,6 +267,19 @@ const OrganizationalEntityForm = () => {
   const handleClose = () => {
     setShowModal(false);
   };
+
+  // Function to handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Calculate the current items to display
+  const indexOfLastEntity = currentPage * itemsPerPage;
+  const indexOfFirstEntity = indexOfLastEntity - itemsPerPage;
+  const currentEntities = searchResults.slice(indexOfFirstEntity, indexOfLastEntity);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(searchResults.length / itemsPerPage);
 
   return (
     <div className="page-content">
@@ -228,17 +295,28 @@ const OrganizationalEntityForm = () => {
             <RxCross2 className="me-1" />
             Cancel
           </NavLink>
-          <NavLink
+          <button
+            type="submit"
+            className="btn btn-outline-success"
+            disabled={!formData.businessEntityType || !formData.businessEntity}
+          >
+            {loading ? "Saving..." : "Save"}
+          </button>
+          {/* <NavLink
             className="btn btn-outline-primary me-2"
             to="#"
             title="Save and New"
           >
             Save & New
           </NavLink>
-          <NavLink className="btn btn-outline-success me-2" to="#" title="Save">
+          <button
+            type="submit"
+            className="btn btn-outline-success me-2"
+            disabled={!formData.businessEntityType || !formData.businessEntity}
+          >
             <FaCheck className="me-1" />
             Save
-          </NavLink>
+          </button> */}
           {/* Tool Dropdown */}
           <div className="dropdown">
             <button
@@ -347,7 +425,7 @@ const OrganizationalEntityForm = () => {
                       htmlFor="businessEntityId"
                       className="form-label label w-20"
                     >
-                      Organizational Entity ID
+                      Organizational Entity ID <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
@@ -551,20 +629,19 @@ const OrganizationalEntityForm = () => {
 
                   {/* Buttons */}
                   <div className="d-flex justify-content-end mt-4">
-                    <NavLink
+                    {/* <NavLink
                       className="btn btn-outline-secondary me-2"
                       to="/organizational-entities"
                       title="Cancel"
                     >
                       Cancel
-                    </NavLink>
-                    <button 
-                      type="submit" 
+                    </NavLink> */}
+                    <button
+                      type="submit"
                       className="btn btn-outline-success"
                       disabled={!formData.businessEntityType || !formData.businessEntity}
                     >
-                      <FaCheck className="me-1" />
-                      Save
+                      {loading ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
@@ -577,12 +654,29 @@ const OrganizationalEntityForm = () => {
       {/* Add Modal */}
       {showModal && (
         <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-lg">
+          <div className="modal-dialog modal-xl">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex justify-content-between align-items-center">
                 <h5 className="modal-title">Select Business Entity</h5>
-                {/* Remove the close button */}
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                <div className="d-flex gap-2 align-items-center">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => fetchBusinessEntities()}
+                    title="Refresh"
+                  >
+                    <BiRefresh />
+                  </button>
+                  {/* Remove the close button */}
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowModal(false)}
+                    title="Close"
+                  >
+                    <RxCross2 />
+                  </button>
+                </div>
               </div>
               <div className="modal-body">
                 {loading ? (
@@ -602,10 +696,10 @@ const OrganizationalEntityForm = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {searchResults.map((entity, index) => (
+                        {currentEntities.map((entity, index) => (
                           <tr key={index}>
                             <td>
-                              <button 
+                              <button
                                 className="btn btn-sm btn-primary"
                                 onClick={() => handleEntitySelect(entity)}
                               >
@@ -615,24 +709,30 @@ const OrganizationalEntityForm = () => {
                             <td>{entity.businessEntity}</td>
                             <td>{entity.businessEntityType}</td>
                             <td>{entity.relatedLocations}</td>
-                            <td>{entity.parentBusinessEntity?.businessEntity || 'N/A'}</td>
+                            <td>{entity.parentBusinessEntity?.businessEntity || ''}</td>
                             <td>{entity.childBusinessEntities.map(child => child.businessEntity).join(' | ')}</td>
                             <td>{new Date(entity.updatedAt).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                    {/* Pagination Controls */}
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                    />
                   </div>
                 )}
               </div>
-              <div className="modal-footer">
-                {/* Remove the close button */}
-                {/* <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button> */}
+              {/* <div className="modal-footer"> */}
+              {/* Remove the close button */}
+              {/* <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button> */}
 
-                {/* Add the Select button */}
-                {/* <button onClick={handleSelectEntities}>Select</button>
+              {/* Add the Select button */}
+              {/* <button onClick={handleSelectEntities}>Select</button>
                 <button onClick={handleClose}>Close</button> */}
-              </div>
+              {/* </div> */}
             </div>
           </div>
         </div>

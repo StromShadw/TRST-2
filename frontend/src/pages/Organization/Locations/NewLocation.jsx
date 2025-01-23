@@ -1,16 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
-import { FaCheck } from "react-icons/fa";
+import axios from "axios";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+
+// Icons
 import { RxCross2 } from "react-icons/rx";
+import { LuTableOfContents, LuClock9 } from "react-icons/lu";
 import { HiMiniWrench } from "react-icons/hi2";
 import { BiSolidEdit } from "react-icons/bi";
 import { FcSettings } from "react-icons/fc";
-import { LuTableOfContents, LuClock9 } from "react-icons/lu";
+import { FaCheck } from "react-icons/fa";
 import { FaPrint, FaRegFilePdf } from "react-icons/fa";
 import { IoIosSearch } from "react-icons/io";
 import { FaCircleQuestion } from "react-icons/fa6";
-import { Card, CardBody, Col, Container, Input, Label, Row, Button, Form, FormFeedback, Alert, Spinner } from 'reactstrap';
+import { Input, Label, Form, } from 'reactstrap';
 import "./Locations.css";
 
 function NewLocation() {
@@ -23,7 +29,8 @@ function NewLocation() {
     const [selectedCountry, setSelectedCountry] = useState('-- Please select --');
     const [isStateOpen, setIsStateOpen] = useState(false); // Add missing state toggle
     const [isCountryOpen, setIsCountryOpen] = useState(false); // Add missing state toggle
-
+    const [showModal, setShowModal] = useState(false);
+    const [selectedBusinessEntities, setSelectedBusinessEntities] = useState([]);
 
     const timeZoneOptions = [
         '-- Please select --',
@@ -79,6 +86,83 @@ function NewLocation() {
         setSelectedCountry(option);
         setIsCountryOpen(false);
     };
+
+    const [searchResults, setSearchResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [currentField, setCurrentField] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
+
+
+    const fetchBusinessEntities = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('http://localhost:8000/api/v1/organizational-entities/all', {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                withCredentials: true
+            });
+            setSearchResults((response.data || []).map(entity => ({
+                ...entity,
+                selected: false
+            })));
+        } catch (error) {
+            console.error('Error fetching business entities:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openEntityModal = (fieldName) => {
+        setCurrentField(fieldName);
+        setShowModal(true);
+        fetchBusinessEntities();
+    };
+
+    const handleEntitySelect = (entity) => {
+        setSelectedBusinessEntities([...selectedBusinessEntities, entity.businessEntity]);
+        setShowModal(false);
+    };
+
+    const handleRemoveEntity = (entityToRemove) => {
+        setSelectedBusinessEntities(selectedBusinessEntities.filter(
+            entity => entity !== entityToRemove
+        ));
+    };
+
+    const handleEntityCheckbox = (entityId) => {
+        setSearchResults(searchResults.map(entity =>
+            entity._id === entityId
+                ? { ...entity, selected: !entity.selected }
+                : entity
+        ));
+    };
+
+    const handleSelectAllEntities = (e) => {
+        setSearchResults(searchResults.map(entity => ({
+            ...entity,
+            selected: e.target.checked
+        })));
+    };
+
+
+    const handleClose = () => {
+        setShowModal(false);
+    };
+
+    // Function to handle page change
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
+    // Calculate the current items to display
+    const indexOfLastEntity = currentPage * itemsPerPage;
+    const indexOfFirstEntity = indexOfLastEntity - itemsPerPage;
+    const currentEntities = searchResults.slice(indexOfFirstEntity, indexOfLastEntity);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(searchResults.length / itemsPerPage)
     return (
         <React.Fragment>
             <Helmet>
@@ -274,7 +358,7 @@ function NewLocation() {
                                         <Label htmlFor={label} className="form-label me-2 fs-15 w-40">{label}</Label>
                                         <Input name="text" className="form-control" type="text" /></div>
                                 ))}
-                                 <div className="mb-3 d-flex align-items-center">
+                                <div className="mb-3 d-flex align-items-center">
                                     <Label htmlFor="Country" className="form-label me-2 fs-15 w-40">Country</Label>
                                     <div className="dropdown-container position-relative flex-grow-1 w-100">
                                         <button
@@ -322,19 +406,146 @@ function NewLocation() {
                                     </div>
                                 ))}
 
-                               
+
                             </div>
                             <div className="col-6">
-                                {['Business Entities'].map((label, index) => (
-                                    <div className="mb-3 d-flex align-items-center" key={index}>
-                                        <Label htmlFor={label} className="form-label me-2 fs-15 w-40">{label}</Label><FaCircleQuestion className="me-2 hw-20"/>
-                                        <Input name="text" className="form-control" type="text" />
+                                <div className="mb-3 d-flex align-items-center">
+                                    <Label htmlFor="Business Entities" className="form-label me-2 fs-15 w-40">
+                                        Business Entities
+                                    </Label>
+                                    <FaCircleQuestion className="me-2 hw-20" />
+                                    <div
+                                        className="form-control d-flex flex-wrap gap-2"
+                                        style={{
+                                            minHeight: '38px',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => {
+                                            setShowModal(true);
+                                            fetchBusinessEntities();
+                                        }}
+                                    >
+                                        {selectedBusinessEntities.map((entity, index) => (
+                                            <span
+                                                key={index}
+                                                className="badge bg-light text-dark d-flex align-items-center"
+                                                style={{
+                                                    padding: '5px 10px',
+                                                    margin: '2px',
+                                                    border: '1px solid #ddd',
+                                                    borderRadius: '3px'
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {entity}
+                                                <button
+                                                    type="button"
+                                                    className="btn-close ms-2"
+                                                    style={{ fontSize: '0.5rem' }}
+                                                    onClick={() => handleRemoveEntity(entity)}
+                                                />
+                                            </span>
+                                        ))}
                                     </div>
-                                ))}
+                                    <button 
+                                        className="p-7 form-button"
+                                        onClick={() => {
+                                            setShowModal(true);
+                                            fetchBusinessEntities();
+                                        }}
+                                    >
+                                        <IoIosSearch />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </Form>
                 </div>
+                {showModal && (
+                    <div className="modal show d-block" tabIndex="-1">
+                        <div className="modal-dialog modal-xl">
+                            <div className="modal-content">
+                                <div className="modal-header d-flex justify-content-between align-items-center">
+                                    <h5 className="modal-title">Select Business Entity</h5>
+                                    <div className="d-flex gap-2 align-items-center">
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => fetchBusinessEntities()}
+                                            title="Refresh"
+                                        >
+                                            <BiRefresh />
+                                        </button>
+                                        {/* Remove the close button */}
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => setShowModal(false)}
+                                            title="Close"
+                                        >
+                                            <RxCross2 />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="modal-body">
+                                    {loading ? (
+                                        <div className="text-center">Loading...</div>
+                                    ) : (
+                                        <div className="table-responsive">
+                                            <table className="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Actions</th>
+                                                        <th>Business Entity</th>
+                                                        <th>Business Entity Type</th>
+                                                        <th>Related Locations</th>
+                                                        <th>Parent Business Entity</th>
+                                                        <th>Child Business Entities</th>
+                                                        <th>Updated At</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {currentEntities.map((entity, index) => (
+                                                        <tr key={index}>
+                                                            <td>
+                                                                <button
+                                                                    className="btn btn-sm btn-primary"
+                                                                    onClick={() => handleEntitySelect(entity)}
+                                                                >
+                                                                    Select
+                                                                </button>
+                                                            </td>
+                                                            <td>{entity.businessEntity}</td>
+                                                            <td>{entity.businessEntityType}</td>
+                                                            <td>{entity.relatedLocations}</td>
+                                                            <td>{entity.parentBusinessEntity?.businessEntity || ''}</td>
+                                                            <td>{entity.childBusinessEntities.map(child => child.businessEntity).join(' | ')}</td>
+                                                            <td>{new Date(entity.updatedAt).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            {/* Pagination Controls */}
+                                            <Pagination
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                onPageChange={handlePageChange}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                {/* <div className="modal-footer"> */}
+                                {/* Remove the close button */}
+                                {/* <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button> */}
+
+                                {/* Add the Select button */}
+                                {/* <button onClick={handleSelectEntities}>Select</button>
+                <button onClick={handleClose}>Close</button> */}
+                                {/* </div> */}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </React.Fragment>
     )
