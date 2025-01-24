@@ -37,7 +37,7 @@ const ProfileDropdown = () => {
         }
 
         if (userData) {
-            const displayName = userData.fullName || userData.username || "";
+            const displayName = userData.fullName || "";
             setUserName(displayName);
             setUserEmail(userData.email || "");
             

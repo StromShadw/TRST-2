@@ -295,13 +295,13 @@ const OrganizationalEntityForm = () => {
             <RxCross2 className="me-1" />
             Cancel
           </NavLink>
-          <button
+          {/* <button
             type="submit"
             className="btn btn-outline-success"
             disabled={!formData.businessEntityType || !formData.businessEntity}
           >
             {loading ? "Saving..." : "Save"}
-          </button>
+          </button> */}
           {/* <NavLink
             className="btn btn-outline-primary me-2"
             to="#"

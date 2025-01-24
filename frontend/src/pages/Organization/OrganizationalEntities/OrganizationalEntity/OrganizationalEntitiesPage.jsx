@@ -545,7 +545,7 @@ const OrganizationalEntitiesPage = () => {
                   className="button1 border-1"
                   to="/new-organizational-entities"
                 >
-                  <TiPlus style={{ width: "20px", height: "20px" }} />{" "}
+                <TiPlus className="hw-20" />
                   Organizational Entity
                 </NavLink>
                 <button
