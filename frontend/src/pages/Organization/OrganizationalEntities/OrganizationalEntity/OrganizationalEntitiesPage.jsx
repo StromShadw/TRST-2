@@ -31,7 +31,7 @@ const OrganizationalEntitiesPage = () => {
   const [rows, setRows] = useState([]);
   const [checkedItems, setCheckedItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9; // Set the number of items per page
+  const itemsPerPage = 10; // Set the number of items per page
 
   const navigate = useNavigate();
 
@@ -625,8 +625,9 @@ const OrganizationalEntitiesPage = () => {
                 ))}
               </tbody>
             </table>
+            
             {/* Pagination Controls */}
-            <div className="pagination pagination-bottom d-flex align-items-center justify-content-between">
+            <div className="pagination pagination-bottom d-flex align-items-center justify-content-center">
               <button 
                 className="pagination-btn" 
                 onClick={() => handlePageChange(currentPage - 1)} 
@@ -634,7 +635,7 @@ const OrganizationalEntitiesPage = () => {
               >
                 <IoMdArrowDropright style={{ transform: 'rotate(180deg)', width: '20px', height: '20px' }} />
               </button>
-              <span className="pagination-text me-2">
+              <span className="pagination-text me-2 text-center">
                 Page {currentPage} of {Math.ceil(rows.length / itemsPerPage)}
               </span>
               <button 

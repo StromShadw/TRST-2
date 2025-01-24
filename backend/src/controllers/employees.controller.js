@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Employee from "../models/employees.model.js";
 import {BusinessEntity} from "../models/organizationalEntities.model.js";
-// import { Location } from "../models/locations.model.js";    
+import Location from "../models/locations.model.js";    
 
 // Create a new employee
 const createEmployee = asyncHandler(async (req, res) => {
@@ -18,7 +18,6 @@ const createEmployee = asyncHandler(async (req, res) => {
         subordinates,
         location,
         department,
-        updatedBy,
         employeeStatus,
         streetAddress1,
         streetAddress2,
@@ -32,14 +31,23 @@ const createEmployee = asyncHandler(async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!employeeID || !firstName || !lastName) {
-        throw new ApiError(400, "Employee ID, first name, and last name are required");
+    const requiredFields = ['employeeID', 'firstName', 'lastName', 'preferredName'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+        throw new ApiError(400, `Missing required fields: ${missingFields.join(', ')}`);
     }
 
-    // Check if employeeID is unique
-    const existingEmployee = await Employee.findOne({ employeeID });
+    // Check if employeeID, firstName, lastName, or preferredName already exist
+    const existingEmployee = await Employee.findOne({
+        $or: [
+            { employeeID },
+            { firstName, lastName, middleName, preferredName }
+        ]
+    });
+
     if (existingEmployee) {
-        throw new ApiError(409, "Employee ID must be unique");
+        throw new ApiError(409, "An employee with the same employeeID, first name, last name, or preferred name already exists.");
     }
 
     // Verify if the Manager exists
@@ -121,7 +129,7 @@ const createEmployee = asyncHandler(async (req, res) => {
         locationName,
         department: departmentIds,
         departmentNames,
-        updatedBy,
+        updatedBy: req.user._id,
         employeeStatus,
         streetAddress1,
         streetAddress2,
@@ -150,7 +158,7 @@ const createEmployee = asyncHandler(async (req, res) => {
         .populate('subordinates', 'firstName lastName employeeID')
         .populate('department', 'businessEntity businessEntityType businessEntityId')
         .populate('location', 'locationName locationId')
-        .populate('updatedBy', 'firstName lastName');
+        .populate('updatedBy', 'fullName email');
 
     return res.status(201).json(
         new ApiResponse(201, populatedEmployee, "Employee Created Successfully!")
@@ -166,7 +174,7 @@ const getEmployee = asyncHandler(async (req, res) => {
         .populate('subordinates')
         .populate('location')
         .populate('department')
-        .populate('updatedBy', 'firstName lastName');
+        .populate('updatedBy', 'fullName email');
 
     if (!employee) {
         throw new ApiError(404, "Employee not found");
@@ -213,7 +221,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
         .populate('subordinates', 'firstName lastName employeeID')
         .populate('department', 'businessEntity businessEntityType businessEntityId')
         .populate('location', 'locationName locationId')
-        .populate('updatedBy', 'firstName lastName')
+        .populate('updatedBy', 'fullName email')
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .exec();
@@ -233,7 +241,10 @@ const getAllEmployees = asyncHandler(async (req, res) => {
 // Update an employee by ID
 const updateEmployee = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const updateData = { ...req.body };
+    const updateData = { 
+        ...req.body,
+        updatedBy: req.user._id // Add this line to automatically set the logged-in user
+    };
 
     // First check if the employee exists
     const existingEmployee = await Employee.findById(id);
@@ -309,7 +320,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     .populate('subordinates', 'firstName lastName employeeID')
     .populate('department', 'businessEntity businessEntityType businessEntityId')
     .populate('location', 'locationName locationId')
-    .populate('updatedBy', 'firstName lastName');
+    .populate('updatedBy', 'fullName email');
 
     return res.status(200).json(
         new ApiResponse(200, updatedEmployee, "Employee Updated Successfully!")

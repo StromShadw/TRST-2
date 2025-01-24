@@ -1,0 +1,27 @@
+.map-container {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 8px 12px;
+}
+
+.popup-content {
+  text-align: center;
+}
+
+.popup-content h5 {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.popup-content p {
+  margin: 0;
+  color: #666;
+}
+
+
+
+.dropdown-menu {
+    z-index: 9999;
+}

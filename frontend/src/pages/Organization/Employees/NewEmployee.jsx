@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FaCheck } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
 import { HiMiniWrench } from "react-icons/hi2";
@@ -13,8 +13,10 @@ import { BiRefresh } from "react-icons/bi";
 import { Card, CardBody, Col, Container, Input, Label, Row, Button, Form, FormFeedback, Alert, Spinner } from 'reactstrap';
 import "./Employees.css";
 import axios from "axios";
+import { BiSearchAlt2 } from "react-icons/bi";
 
 function NewEmployee() {
+    const navigate = useNavigate();
     const [isToolOpen, setIsToolOpen] = useState(false);
     const [isTimeZoneOpen, setIsTimeZoneOpen] = useState(false); // Time Zone dropdown
     const [isStatusOpen, setIsStatusOpen] = useState(false); // Employee Status dropdown
@@ -29,6 +31,35 @@ function NewEmployee() {
     const [showModal, setShowModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
+    const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+    // State for form inputs
+    const [employeeData, setEmployeeData] = useState({
+        employeeID: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        preferredName: "",
+        title: "",
+        workEmailAddress: "",
+        workPhone: "",
+        workMobilePhone: "",
+        fax: "",
+        manager: "",
+        subordinates: [],
+        department: [],
+        streetAddress1: "",
+        streetAddress2: "",
+        city: "",
+        zipPostalCode: "",
+        stateProvince: "",
+        country: "",
+        homePhoneNumber: "",
+        personalMobilePhone: "",
+        personalEmailAddress: "",
+        employeeStatus: "Active", // Default status
+    });
 
     const timeZoneOptions = [
         '-- Please select --',
@@ -86,26 +117,26 @@ function NewEmployee() {
         setSelectedCountry(option);
         setIsCountryOpen(false);
     };
-    
+
     const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         return (
-          <div className="pagination d-flex justify-content-center align-items-center">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              &lt; {/* Previous */}
-            </button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              &gt; {/* Next */}
-            </button>
-          </div>
+            <div className="pagination d-flex justify-content-center align-items-center">
+                <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    &lt; {/* Previous */}
+                </button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    &gt; {/* Next */}
+                </button>
+            </div>
         );
-      };
+    };
 
     const fetchBusinessEntities = async () => {
         try {
@@ -127,6 +158,50 @@ function NewEmployee() {
         }
     };
 
+    const [employees, setEmployees] = useState([])
+
+    const loadEmployees = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(
+                "http://localhost:8000/api/v1/employees/all",
+                {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Fetched employees data:', data); // Log the data
+
+            if (Array.isArray(data.data.employees)) {
+                setEmployees(data.data.employees); // Set the employees state
+            } else {
+                console.error("Expected an array but got:", data.data.employees);
+                setEmployees([]); // Reset to empty array if not valid
+            }
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+            setEmployees([]); // Reset to empty array on error
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadEmployees()
+        console.log(employees);
+
+    }, []);
+
+
     const handleDepartmentSearch = () => {
         setShowModal(true);
         fetchBusinessEntities();
@@ -147,6 +222,46 @@ function NewEmployee() {
     // Add page change handler
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    // Handle input change
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setEmployeeData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
+    // Handle form submission
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.post("http://localhost:8000/api/v1/employees", employeeData, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                withCredentials: true,
+            });
+            console.log("Employee created successfully:", response.data);
+            navigate("/employees"); // Redirect to employees list after successful creation
+        } catch (error) {
+            console.error("Error creating employee:", error);
+        }
+    };
+
+    const handleManagerClick = () => {
+        // Assuming you have a way to get the manager's data, e.g., from a state or API
+        const managerData = employees.find(emp => emp.employeeID === employeeData.manager); // Adjust as necessary
+        setSelectedEmployee(managerData);
+        setShowEmployeeModal(true);
+    };
+
+    const handleSubordinateClick = () => {
+        // Assuming you have a way to get the subordinate's data, e.g., from a state or API
+        const subordinateData = employees.find(emp => emp.employeeID === employeeData.subordinates); // Adjust as necessary
+        setSelectedEmployee(subordinateData);
+        setShowEmployeeModal(true);
     };
 
     return (
@@ -202,13 +317,19 @@ function NewEmployee() {
                 <div className="form-content">
                     <div className="form-heading">Work Contact Information</div>
                     <div className="border-1"></div>
-                    <Form>
+                    <Form onSubmit={handleSubmit}>
                         <div className="row pt-4">
                             <div className="col-6">
                                 {['Employee ID', 'First Name', 'Middle Name', 'Last Name', 'Preferred Name', 'Title'].map((label, index) => (
                                     <div className="mb-3 d-flex align-items-center" key={index}>
                                         <Label htmlFor={label} className="form-label me-2 fs-15 w-40">{label}</Label>
-                                        <Input name="text" className="form-control" type="text" />
+                                        <Input
+                                            name={label.replace(" ", "").toLowerCase()}
+                                            className="form-control"
+                                            type="text"
+                                            value={employeeData[label.replace(" ", "").toLowerCase()]}
+                                            onChange={handleChange}
+                                        />
                                     </div>
                                 ))}
                                 <div className="mb-3 d-flex align-items-center">
@@ -245,16 +366,29 @@ function NewEmployee() {
                                 {['Work Email Address', 'Work Phone', 'Work Mobile Phone', 'Fax'].map((label, index) => (
                                     <div className="mb-3 d-flex align-items-center" key={index}>
                                         <Label htmlFor={label} className="form-label me-2 fs-15 w-40">{label}</Label>
-                                        <Input name="text" className="form-control" type="text" />
+                                        <Input
+                                            name={label.replace(" ", "").toLowerCase()}
+                                            className="form-control"
+                                            type="text"
+                                            value={employeeData[label.replace(" ", "").toLowerCase()]}
+                                            onChange={handleChange}
+                                        />
                                     </div>
                                 ))}
-                                {['Manager', 'Subordinates'].map((label, index) => (
-                                    <div className="mb-3 d-flex align-items-center" key={index}>
-                                        <Label htmlFor={label} className="form-label me-4 fs-15 w-40">{label}</Label>
-                                        <Input name="text" className="form-control" type="text" />
-                                        <button className="p-7 form-button"><IoIosSearch /></button>
-                                    </div>
-                                ))}
+                                <div className="mb-3 d-flex align-items-center">
+                                    <Label htmlFor="manager" className="form-label me-4 fs-15 w-40">Manager</Label>
+                                    <Input name="manager" className="form-control" type="text" />
+                                    <button className="p-7 form-button" onClick={handleManagerClick}>
+                                        <IoIosSearch />
+                                    </button>
+                                </div>
+                                <div className="mb-3 d-flex align-items-center">
+                                    <Label htmlFor="subordinates" className="form-label me-4 fs-15 w-40">Subordinates</Label>
+                                    <Input name="subordinates" className="form-control" type="text" />
+                                    <button className="p-7 form-button" onClick={handleSubordinateClick}>
+                                        <IoIosSearch />
+                                    </button>
+                                </div>
                                 <div className="mb-3 d-flex align-items-center">
                                     <Label htmlFor="employeeStatus" className="form-label me-2 fs-15 w-40">Employee Status</Label>
                                     <div className="dropdown-container position-relative flex-grow-1 w-100">
@@ -421,7 +555,6 @@ function NewEmployee() {
                                     >
                                         <BiRefresh />
                                     </button>
-                                    {/* Remove the close button */}
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary"
@@ -470,7 +603,6 @@ function NewEmployee() {
                                                 ))}
                                             </tbody>
                                         </table>
-                                        {/* Pagination Controls */}
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalPages}
@@ -479,14 +611,32 @@ function NewEmployee() {
                                     </div>
                                 )}
                             </div>
-                            {/* <div className="modal-footer"> */}
-                            {/* Remove the close button */}
-                            {/* <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button> */}
-
-                            {/* Add the Select button */}
-                            {/* <button onClick={handleSelectEntities}>Select</button>
-                <button onClick={handleClose}>Close</button> */}
-                            {/* </div> */}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showEmployeeModal && selectedEmployee && (
+                <div className="modal show d-block" tabIndex="-1">
+                    <div className="modal-dialog modal-xl">
+                        <div className="modal-content">
+                            <div className="modal-header d-flex justify-content-between align-items-center">
+                                <h5 className="modal-title">Employee Details</h5>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => setShowEmployeeModal(false)}
+                                    title="Close"
+                                >
+                                    <RxCross2 />
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <p><strong>Employee ID:</strong> {selectedEmployee.employeeID}</p>
+                                <p><strong>Name:</strong> {selectedEmployee.firstName} {selectedEmployee.lastName}</p>
+                                <p><strong>Email:</strong> {selectedEmployee.workEmailAddress}</p>
+                                <p><strong>Title:</strong> {selectedEmployee.title}</p>
+                                <p><strong>Status:</strong> {selectedEmployee.employeeStatus}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -21,6 +21,7 @@ const createOrganizationalEntity = asyncHandler(async (req, res) => {
     // Validate required fields
     if (!businessEntityType || !businessEntity || !businessEntityId) {
         throw new ApiError(400, "businessEntityType, businessEntityId and businessEntity fields must be provided")
+            res.status(400)
     }
 
     // Check if businessEntityType is provided and valid
@@ -128,8 +129,11 @@ const createOrganizationalEntity = asyncHandler(async (req, res) => {
 })
 
 const updateOrganizationalEntity = asyncHandler(async (req, res) => {
-    const { id } = req.params
-    const updateData = { ...req.body }
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    // Log the incoming request data
+    console.log("Incoming Update Data:", updateData);
 
     // First check if the entity exists
     const existingEntity = await BusinessEntity.findById(id)
@@ -143,9 +147,9 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
     }
     
     //check if buisnessEntityId is provided and unique
-    if (updateData.businessEntityId && updateData.businessEntityId !== existingEntity.businessEntityId) {
-        throw new ApiError(400, "businessEntityId cannot be changed");
-    }
+    // if (updateData.businessEntityId && updateData.businessEntityId !== existingEntity.businessEntityId) {
+    //     throw new ApiError(400, "businessEntityId cannot be changed");
+    // }
 
     // Check if businessEntityType is provided and valid
     if (updateData.businessEntityType && !BUSINESS_ENTITY_TYPES.includes(updateData.businessEntityType)) {
@@ -163,15 +167,50 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
         }
     }
 
+    // Find editors by username or fullName
+    if (updateData.editors?.length) {
+        const editorIds = await User.find({
+            $or: [
+                { username: { $in: updateData.editors } },
+                { fullName: { $in: updateData.editors } }
+            ]
+        }).distinct('_id');
+
+        if (editorIds.length === 0) {
+            throw new ApiError(400, "No editors found with the provided names/usernames");
+        }
+        updateData.editors = editorIds; // Update to use ObjectIds
+    }
+
+    // Check if parentBusinessEntity is provided and handle removal
+    if (updateData.parentBusinessEntity === "") {
+        console.log("Removing parentBusinessEntity");
+        updateData.parentBusinessEntity = null; // Set to null to remove the parent entity
+    } else if (updateData.parentBusinessEntity) {
+        // If a name is provided, find the parent entity by name
+        const parentEntity = await BusinessEntity.findOne({ businessEntity: updateData.parentBusinessEntity });
+        if (parentEntity) {
+            updateData.parentBusinessEntity = parentEntity._id; // Set to the ObjectId of the found entity
+        } else {
+            throw new ApiError(404, "Parent business entity not found by name");
+        }
+    }
+
+    // Ensure that if parentBusinessEntity is not provided, it doesn't get updated
+    if (!updateData.parentBusinessEntity) {
+        console.log("Deleting parentBusinessEntity from updateData");
+        delete updateData.parentBusinessEntity; // Remove if undefined or null
+    }
+
     const updatedEntity = await BusinessEntity.findByIdAndUpdate(
         id,
         updateData,
         { new: true, runValidators: true }
-    )
+    );
 
     return res.status(200).json(
         new ApiResponse(200, updatedEntity, "Organizational Entity Updated Successfully!")
-    )
+    );
 })
 
 const deleteOrganizationalEntity = asyncHandler(async (req, res) => {

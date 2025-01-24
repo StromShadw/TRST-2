@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { IoMdArrowDropdown, IoMdArrowDropright } from "react-icons/io";
 import { HiMiniWrench } from "react-icons/hi2";
 import { BiSolidEdit } from "react-icons/bi";
@@ -12,13 +12,20 @@ import { TiExport, TiPlus } from "react-icons/ti";
 import { FaRegTrashCan, FaTableColumns } from "react-icons/fa6";
 import { ImCopy } from "react-icons/im";
 import { HiDotsHorizontal } from "react-icons/hi";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { CiEdit } from "react-icons/ci";
+import { FaSync } from "react-icons/fa";
 import "./Employees.css";
+import axios from "axios";
 
 function Employees() {
   const [isOpen, setIsOpen] = useState(false);
   const [isToolOpen, setIsToolOpen] = useState(false);
   const [isColumnOpen, setIsColumnOpen] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [checkedItems, setCheckedItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -32,40 +39,112 @@ function Employees() {
   };
 
   useEffect(() => {
-    fetchEmployees();
+    loadEmployees();
   }, []);
 
-  const fetchEmployees = async () => {
+  const loadEmployees = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/employees/all', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        "http://localhost:8000/api/v1/employees/all",
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('Fetched employees data:', data); // Log the data
 
-      // Access the employees array from the data object
       if (Array.isArray(data.data.employees)) {
         setEmployees(data.data.employees); // Set the employees state
       } else {
-        console.error('Expected an array but got:', data.data.employees);
+        console.error("Expected an array but got:", data.data.employees);
         setEmployees([]); // Reset to empty array if not valid
       }
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error("Error fetching employees:", error);
       setEmployees([]); // Reset to empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+  console.log("Employees state:", employees); // Log the employees state
+
+  const handleEdit = (employeeId) => {
+    navigate(`/edit-employee/${employeeId}`);
+  };
+
+  const handleDelete = async (employeeId) => {
+    if (window.confirm(`Are you sure you want to delete this employee?`)) {
+      try {
+        await fetch(`http://localhost:8000/api/v1/employees/${employeeId}`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        loadEmployees(); // Refresh the list after deletion
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+      }
     }
   };
 
-  console.log('Employees state:', employees); // Log the employees state
+  const handleCheckboxChange = (id) => {
+    setCheckedItems((prev) => {
+      if (id === "all") {
+        return prev.length === employees.length
+          ? []
+          : employees.map((employee) => employee._id);
+      }
+      return prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id];
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (checkedItems.length === 0) return;
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${checkedItems.length} selected item(s)?`
+      )
+    ) {
+      try {
+        // Delete all checked items
+        await Promise.all(
+          checkedItems.map((id) =>
+            axios.delete(`http://localhost:8000/api/v1/employees/${id}`, {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              withCredentials: true,
+            })
+          )
+        );
+
+        // Clear checked items and refresh the list
+        setCheckedItems([]);
+        loadEmployees(); // Refresh the employee list
+      } catch (error) {
+        console.error("Error deleting employees:", error);
+      }
+    }
+  };
+
+  const handleRefresh = () => {
+    loadEmployees();
+  };
 
   return (
     <React.Fragment>
@@ -294,8 +373,13 @@ function Employees() {
                 <button className="button border-1 ms-1">
                   <FaHome className="hw-15" />
                 </button>
-                <button className="button border-1 ms-1">
-                  <LuRefreshCw className="hw-18" />
+                <button
+                  className="button border-1 ms-1"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {loading ? <FaSync className="spinner" /> : <FaSync />}
                 </button>
                 <span className="dropdown">
                   <button
@@ -420,7 +504,15 @@ function Employees() {
                   <TiPlus className="hw-20" />
                   Employees
                 </NavLink>
-                <button className="button border-1 ms-1">
+                <button
+                  className="button border-1 ms-1"
+                  style={{
+                    opacity: checkedItems.length > 0 ? 1 : 0.5,
+                    cursor: checkedItems.length > 0 ? "pointer" : "default",
+                  }}
+                  onClick={handleBulkDelete}
+                  disabled={checkedItems.length === 0}
+                >
                   <FaRegTrashCan className="hw-20" />
                 </button>
                 <button className="button border-1 ms-1">
@@ -434,13 +526,21 @@ function Employees() {
           </div>
         </div>
         <div className="border-1 mb-2 mt-2"></div>
-        
+
         <div className="table-responsive">
+          {loading && <div>Loading...</div>}
           <table className="table">
             <thead>
               <tr>
                 <th>
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    onChange={() => handleCheckboxChange("all")}
+                    checked={
+                      checkedItems.length === employees.length &&
+                      employees.length > 0
+                    }
+                  />
                 </th>
                 <th>Actions</th>
                 <th>ID</th>
@@ -461,41 +561,57 @@ function Employees() {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(employees) && employees.map((employee) => (
-                <tr key={employee._id}>
-                  <td>
-                    <input type="checkbox" />
-                  </td>
-                  <td>
-                    <div className="d-flex gap-2">
-                      <button className="btn btn-sm btn-link">
-                        <BiSolidEdit />
-                      </button>
-                      <button className="btn btn-sm btn-link">
-                        <ImCopy />
-                      </button>
-                    </div>
-                  </td>
-                  <td>{employee.employeeID}</td>
-                  <td>{`${employee.firstName} ${employee.lastName}`}</td>
-                  <td>{employee.workEmailAddress}</td>
-                  <td>{employee.title}</td>
-                  <td>{employee.employeeStatus}</td>
-                  <td>{employee.departmentNames.join(', ')}</td>
-                  <td>{employee.homePhone}</td>
-                  <td>{employee.workMobile}</td>
-                  <td>{employee.workPhone}</td>
-                  <td>{employee.personalMobile}</td>
-                  <td>
-                    {employee.portalUser && (
-                      <span className="badge bg-secondary">Yes</span>
-                    )}
-                  </td>
-                  <td>{employee.portalLoginName}</td>
-                  <td>{new Date(employee.updatedAt).toLocaleString()}</td>
-                  <td>{employee.updatedBy}</td>
-                </tr>
-              ))}
+              {Array.isArray(employees) &&
+                employees.map((employee) => (
+                  <tr key={employee._id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={checkedItems.includes(employee._id)}
+                        onChange={() => handleCheckboxChange(employee._id)}
+                      />
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <CiEdit
+                          style={{ cursor: "pointer", color: "green" }}
+                          title="Edit"
+                          onClick={() => handleEdit(employee._id)}
+                        />
+                        <RiDeleteBin6Line
+                          style={{ cursor: "pointer", color: "red" }}
+                          title="Delete"
+                          onClick={() => handleDelete(employee._id)}
+                        />
+                      </div>
+                    </td>
+                    <td>{employee._id}</td>
+                    <td>{`${employee.firstName} ${
+                      employee.lastName
+                    }`}</td>
+                    <td>{employee.firstName || "-"}</td>
+                    <td>{employee.lastName || "-"}</td>
+                    <td>{employee.employeeID || "-"}</td>
+                    <td>{employee.workEmailAddress || "-"}</td>
+                    <td>{employee.homePhone || "-"}</td>
+                    <td>{employee.workMobile || "-"}</td>
+                    <td>{employee.workPhone || "-"}</td>
+                    <td>{employee.personalMobile || "-"}</td>
+                    <td>{employee.departmentNames?.join(", ") || "-"}</td>
+                    <td>
+                      {employee.portalUser ? (
+                        <span className="badge bg-success">Yes</span>
+                      ) : (
+                        <span className="badge bg-secondary">No</span>
+                      )}
+                    </td>
+                    <td>{employee.portalLoginName || "-"}</td>
+                    <td>{new Date(employee.updatedAt).toLocaleString()}</td>
+                    <td>
+                      {employee.updatedBy?.fullName || "-"}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

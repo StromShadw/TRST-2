@@ -19,7 +19,7 @@ export const loginUser = (user, history) => async (dispatch) => {
     const data = await response.json();
     
     // Add debugging to check the response data
-    console.log('Login response:', data);
+    // console.log('Login response:', data);
 
     if (response.ok && data.success) {
       // Store user data in sessionStorage

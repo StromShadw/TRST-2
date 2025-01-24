@@ -156,6 +156,11 @@ button {
   border-bottom: 2px solid #dee2e6;
   font-size: 12px;
 }
+.table tbody td{
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 12px;
+}
 
 .table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.075);
@@ -167,8 +172,10 @@ button {
 }
 
 .pagination-bottom {
-  position: absolute;
-  bottom: 70px;
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .pagination button.active {
