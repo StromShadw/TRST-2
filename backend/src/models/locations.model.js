@@ -51,11 +51,11 @@ const locationSchema = new mongoose.Schema({
     },
     parentLocation: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Location"
+        ref: "BusinessEntity"
     },
     childLocations: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Location"
+        ref: "BusinessEntity"
     }],
     businessEntities: [{
         type: mongoose.Schema.Types.ObjectId,

@@ -592,7 +592,7 @@ function Employees() {
                     <td>{employee.firstName || "-"}</td>
                     <td>{employee.lastName || "-"}</td>
                     <td>{employee.employeeID || "-"}</td>
-                    <td >{employee.workEmailAddress || "-"}</td>
+                    <td>{employee.workEmailAddress || "-"}</td>
                     <td>{employee.homePhone || "-"}</td>
                     <td>{employee.workMobile || "-"}</td>
                     <td>{employee.workPhone || "-"}</td>
@@ -606,7 +606,7 @@ function Employees() {
                       )}
                     </td>
                     <td>{employee.portalLoginName || "-"}</td>
-                    <td>{new Date(employee.updatedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', year: 'numeric', month: '2-digit', day: '2-digit' })}</td>
+                    <td>{new Date(employee.updatedAt).toLocaleString()}</td>
                     <td>
                       {employee.updatedBy?.fullName || "-"}
                     </td>

@@ -68,7 +68,8 @@ const createLocation = asyncHandler(async (req, res) => {
 const getAllLocations = asyncHandler(async (req, res) => {
     const locations = await Location.find()
         .populate("siteManager", "firstName lastName email")
-        .populate("parentLocation", "locationName")
+        // .populate('parentBusinessEntity', 'businessEntity businessEntityType businessEntityId description')
+        // .populate('childBusinessEntities', 'businessEntity businessEntityType businessEntityId description')
         .populate("childLocations", "locationName")
         .populate("businessEntities", "name");
 

@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fileUpload from 'express-fileupload';
 
+
 const app = express();
 
 //Middlewares
@@ -25,11 +26,13 @@ app.use(cookieParser());
 import userRouter from './routes/user.routes.js';
 import organizationalEntitiesRouter from './routes/organizationalEntities.routes.js';
 import employeesRouter from './routes/employees.routes.js';
+import locationsRoutes from './routes/locations.routes.js';
 
 
 //Routes declaration
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/organizational-entities', organizationalEntitiesRouter);
 app.use('/api/v1/employees', employeesRouter);
+app.use('/api/v1/locations', locationsRoutes);
 
 export { app };

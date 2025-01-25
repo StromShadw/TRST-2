@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Link, NavLink } from "react-router-dom";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { CiEdit } from "react-icons/ci";
 import { IoMdArrowDropdown, IoMdArrowDropright } from "react-icons/io";
 import { HiMiniWrench } from "react-icons/hi2";
 import { BiSolidEdit } from "react-icons/bi";
@@ -18,6 +20,23 @@ function Locations() {
   const [isOpen, setIsOpen] = useState(false);
   const [isToolOpen, setIsToolOpen] = useState(false);
   const [isColumnOpen, setIsColumnOpen] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [selectedLocations, setSelectedLocations] = useState([]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/v1/locations/all");
+        const data = await response.json();
+        if (data.success) {
+          setLocations(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -29,6 +48,20 @@ function Locations() {
   const ColumnDropDown = () => {
     setIsColumnOpen(!isColumnOpen);
   };
+
+  const handleCheckboxChange = (id) => {
+    setSelectedLocations((prev) => 
+      prev.includes(id) ? prev.filter((locId) => locId !== id) : [...prev, id]
+    );
+  };
+
+  const handleActionClick = (action) => {
+    if (action === "delete") {
+      console.log("Deleting locations:", selectedLocations);
+      setSelectedLocations([]);
+    }
+  };
+
   return (
     <React.Fragment>
       <Helmet>
@@ -303,9 +336,77 @@ function Locations() {
                 </button>
               </div>
             </div>
+            <button onClick={() => handleActionClick("delete")} disabled={selectedLocations.length === 0}>
+              Delete Selected
+            </button>
           </div>
         </div>
         <div className="border-1 mb-2 mt-2"></div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedLocations(locations.map(loc => loc._id));
+                    } else {
+                      setSelectedLocations([]);
+                    }
+                  }}
+                  checked={selectedLocations.length === locations.length}
+                />
+              </th>
+              <th>Actions</th>
+              <th>Location Name</th>
+              <th>Location Type</th>
+              <th>Street Address 1</th>
+              <th>City</th>
+              <th>State/Province</th>
+              <th>Country</th>
+              <th>Main Phone</th>
+              <th>Capacity</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            {locations.map(location => (
+              <tr key={location._id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedLocations.includes(location._id)}
+                    onChange={() => handleCheckboxChange(location._id)}
+                  />
+                </td>
+                <td>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <CiEdit
+                          style={{ cursor: "pointer", color: "green" }}
+                          title="Edit"
+                          // onClick={() => handleEdit(employee._id)}
+                        />
+                        <RiDeleteBin6Line
+                          style={{ cursor: "pointer", color: "red" }}
+                          title="Delete"
+                          // onClick={() => handleDelete(employee._id)}
+                        />
+                      </div>
+                    </td>
+                <td>{location.locationName}</td>
+                <td>{location.locationType}</td>
+                <td>{location.streetAddress1}</td>
+                <td>{location.city}</td>
+                <td>{location.stateProvince}</td>
+                <td>{location.country}</td>
+                <td>{location.mainPhone}</td>
+                <td>{location.capacity}</td>
+                
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </React.Fragment>
   );
