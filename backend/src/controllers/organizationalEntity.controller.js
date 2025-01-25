@@ -202,11 +202,6 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
         }
     }
 
-    // Ensure that if parentBusinessEntity is not provided, it doesn't get updated
-    if (!updateData.parentBusinessEntity) {
-        console.log("Deleting parentBusinessEntity from updateData");
-        delete updateData.parentBusinessEntity; // Remove if undefined or null
-    }
 
     // Find child business entities by name and convert to ObjectIds
     if (updateData.childBusinessEntities?.length) {
@@ -232,30 +227,45 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
 })
 
 const deleteOrganizationalEntity = asyncHandler(async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
 
-    const entityToDelete = await BusinessEntity.findById(id)
+    const entityToDelete = await BusinessEntity.findById(id);
 
     if (!entityToDelete) {
-        throw new ApiError(404, "Organizational Entity not found")
+        throw new ApiError(404, "Organizational Entity not found");
     }
 
-    // Remove this entity from parent's childBusinessEntities
+    // Remove this entity from its parent's childBusinessEntities
     if (entityToDelete.parentBusinessEntity) {
         await BusinessEntity.findByIdAndUpdate(
             entityToDelete.parentBusinessEntity,
             {
                 $pull: { childBusinessEntities: id }
             }
-        )
+        );
     }
 
+    // Remove this entity from any childBusinessEntities in other entities
+    await BusinessEntity.updateMany(
+        { childBusinessEntities: id },
+        { $pull: { childBusinessEntities: id } } // Remove from child entities
+    );
+
+    // Remove this entity from any parentBusinessEntity references in other entities
+    await BusinessEntity.updateMany(
+        { parentBusinessEntity: id },
+        { $set: { parentBusinessEntity: null } } // Set parent to null
+    );
+
+    // Delete all child entities of the parent
+    await BusinessEntity.deleteMany({ parentBusinessEntity: entityToDelete._id });
+
     // Delete the entity
-    await BusinessEntity.findByIdAndDelete(id)
+    await BusinessEntity.findByIdAndDelete(id);
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Organizational Entity Deleted Successfully!")
-    )
+    );
 })
 
 const getOrganizationalEntityDetails = asyncHandler(async (req, res) => {

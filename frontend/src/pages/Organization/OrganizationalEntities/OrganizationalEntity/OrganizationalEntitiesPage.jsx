@@ -126,8 +126,8 @@ const OrganizationalEntitiesPage = () => {
           businessEntityId: entityToEdit.businessEntityId,
           description: entityToEdit.description,
           parentBusinessEntity: entityToEdit.parentEntity,
-          childBusinessEntities: entityToEdit.childEntities.split(' | '),
-          relatedLocations: entityToEdit.location,
+          childBusinessEntities: entityToEdit.childEntities.match(/[^|]+/g) || [],
+          relatedLocations: entityToEdit.location,  
           editors: []
       } });
     } else {

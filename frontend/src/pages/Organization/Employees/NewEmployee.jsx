@@ -14,6 +14,8 @@ import { Card, CardBody, Col, Container, Input, Label, Row, Button, Form, FormFe
 import "./Employees.css";
 import axios from "axios";
 import { BiSearchAlt2 } from "react-icons/bi";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 function NewEmployee() {
     const navigate = useNavigate();
@@ -33,6 +35,10 @@ function NewEmployee() {
     const [itemsPerPage] = useState(10);
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [employees, setEmployees] = useState([]);
+    const [userLoading, setUserLoading] = useState(false);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     // State for form inputs
     const [employeeData, setEmployeeData] = useState({
@@ -158,8 +164,6 @@ function NewEmployee() {
         }
     };
 
-    const [employees, setEmployees] = useState([])
-
     const loadEmployees = async () => {
         setLoading(true);
         try {
@@ -257,11 +261,114 @@ function NewEmployee() {
         setShowEmployeeModal(true);
     };
 
+    const fetchEmployees = async () => {
+        try {
+            setUserLoading(true);
+            const response = await axios.get('http://localhost:8000/api/v1/employees/all', {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                withCredentials: true
+            });
+            console.log("Fetched employees data:", response.data); // Log the response
+            setEmployees(response.data.data.employees || []); // Ensure this matches the response structure
+        } catch (error) {
+            console.error('Error fetching employees:', error);
+        } finally {
+            setUserLoading(false);
+        }
+    };
+
+    const handleUserSelect = (user) => {
+        const newEditors = [...new Set([...employeeData.editors, user.username])];
+        setEmployeeData({
+            ...employeeData,
+            editors: newEditors
+        });
+        setShowUserModal(false);
+    };
+
+    const UserModal = ({ selectedEmployee }) => (
+        <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-xl">
+                <div className="modal-content">
+                    <div className="modal-header d-flex justify-content-between align-items-center">
+                        <h5 className="modal-title">Employee Details</h5>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setShowUserModal(false)}
+                            title="Close"
+                        >
+                            <RxCross2 />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="table-responsive">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Select</th>
+                                        <th>ID</th>
+                                        <th>Employee</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Employee ID</th>
+                                        <th>Work Email Address</th>
+                                        <th>Home Phone Number</th>
+                                        <th>Work Phone</th>
+                                        <th>Work Mobile Phone</th>
+                                        <th>Personal Mobile Phone</th>
+                                        <th>Department</th>
+                                        <th>Portal User</th>
+                                        <th>Portal Login Name</th>
+                                        <th>Updated At</th>
+                                        <th>Updated By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td>{selectedEmployee._id}</td>
+                                        <td>{selectedEmployee.firstName} {selectedEmployee.lastName}</td>
+                                        <td>{selectedEmployee.firstName}</td>
+                                        <td>{selectedEmployee.lastName}</td>
+                                        <td>{selectedEmployee.employeeID}</td>
+                                        <td>{selectedEmployee.workEmailAddress}</td>
+                                        <td>{selectedEmployee.homePhoneNumber || '-'}</td>
+                                        <td>{selectedEmployee.workPhone || '-'}</td>
+                                        <td>{selectedEmployee.workMobilePhone || '-'}</td>
+                                        <td>{selectedEmployee.personalMobilePhone || '-'}</td>
+                                        <td>{selectedEmployee.departmentNames.join(', ') || '-'}</td>
+                                        <td>{selectedEmployee.portalUser ? 'Yes' : 'No'}</td>
+                                        <td>{selectedEmployee.portalLoginName || '-'}</td>
+                                        <td>{new Date(selectedEmployee.updatedAt).toLocaleString() || '-'}</td>
+                                        <td>{selectedEmployee.updatedBy?.fullName || '-'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     const handleSubordinateClick = () => {
-        // Assuming you have a way to get the subordinate's data, e.g., from a state or API
-        const subordinateData = employees.find(emp => emp.employeeID === employeeData.subordinates); // Adjust as necessary
-        setSelectedEmployee(subordinateData);
-        setShowEmployeeModal(true);
+        setShowUserModal(true);
+        fetchEmployees();
+    };
+
+    // Function to handle adding selected employees as subordinates
+    const handleAddSubordinates = () => {
+        const selectedSubordinates = employees.filter(employee => selectedEmployees.includes(employee._id));
+        setEmployeeData(prevData => ({
+            ...prevData,
+            subordinates: [...prevData.subordinates, ...selectedSubordinates]
+        }));
+        setSelectedEmployees([]); // Clear selection after adding
     };
 
     return (
@@ -641,6 +748,24 @@ function NewEmployee() {
                     </div>
                 </div>
             )}
+            {showUserModal && selectedEmployee && <UserModal selectedEmployee={selectedEmployee} />}
+
+            {/* Render the subordinates in the form */}
+            <div>
+                <h5>Subordinates</h5>
+                <ul>
+                    {employeeData.subordinates.map(subordinate => (
+                        <li key={subordinate._id}>
+                            {subordinate.firstName} {subordinate.lastName}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            {/* Add a button to add selected employees as subordinates */}
+            <button onClick={handleAddSubordinates}>
+                Add Selected as Subordinates
+            </button>
         </React.Fragment>
     );
 }

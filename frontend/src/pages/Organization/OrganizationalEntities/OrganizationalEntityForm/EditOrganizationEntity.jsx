@@ -112,6 +112,11 @@ const EditOrganizationalEntityForm = () => {
     setInitialValues({ ...initialValues, [name]: value });
   };
 
+  const handleEditorRemove = (editor) => {
+    const newEditors = initialValues.editors.filter(e => e !== editor);
+    setInitialValues({ ...initialValues, editors: newEditors });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -198,18 +203,10 @@ const EditOrganizationalEntityForm = () => {
 
   const fetchUsers = async () => {
     try {
-      setUserLoading(true);
-      const response = await axios.get('http://localhost:8000/api/v1/users/all', {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
-      setUsers(response.data?.data || []);
+      const response = await axios.get('http://localhost:8000/api/v1/users/all');
+      setUsers(response.data.data); // Assuming the response structure
     } catch (error) {
       console.error('Error fetching users:', error);
-    } finally {
-      setUserLoading(false);
     }
   };
 
@@ -451,13 +448,7 @@ const EditOrganizationalEntityForm = () => {
                             type="button"
                             className="btn-close ms-2"
                             style={{ fontSize: '0.5rem' }}
-                            onClick={() => {
-                              const newEditors = initialValues.editors.filter(e => e !== editor);
-                              setInitialValues({
-                                ...initialValues,
-                                editors: newEditors
-                              });
-                            }}
+                            onClick={() => handleEditorRemove(editor)}
                           ></button>
                         </span>
                       ))}
@@ -538,10 +529,7 @@ const EditOrganizationalEntityForm = () => {
                     </button>
                   </div>
                   <div className="mb-3 d-flex">
-                    <label
-                      htmlFor="childBusinessEntities"
-                      className="form-label label w-20"
-                    >
+                    <label htmlFor="childBusinessEntities" className="form-label label w-20">
                       Child Organizational Entities
                     </label>
                     <div

@@ -20,6 +20,14 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Create a custom icon
+const CustomIcon = L.icon({
+  iconUrl: require('./image.png'), // Path to your custom icon
+  iconSize: [40, 50], // Size of the icon
+  iconAnchor: [15, 50], // Anchor point of the icon
+  popupAnchor: [0, -40] // Adjusts the popup position
+});
+
 function LocationMap() {
   const position = [25.28354, 51.534677];
   const [isOpen, setIsOpen] = useState(false);
@@ -129,7 +137,7 @@ function LocationMap() {
               />
             </LayersControl.BaseLayer>
 
-            <Marker position={position}>
+            <Marker position={position} icon={CustomIcon}>
               <Popup className="custom-popup">
                 <div className="popup-content">
                   <h5>Head Office</h5>
@@ -137,6 +145,15 @@ function LocationMap() {
                 </div>
               </Popup>
             </Marker>
+
+            {/* <Marker position={[25.28454, 51.534677]} icon={CustomIcon}>
+              <Popup className="custom-popup">
+                <div className="popup-content">
+                  <h5>New Location</h5>
+                  <p>This is a new marker added to the map.</p>
+                </div>
+              </Popup>
+            </Marker> */}
           </LayersControl>
         </MapContainer>
       </div>
