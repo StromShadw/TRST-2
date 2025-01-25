@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
 import Toastify from "toastify-js";
@@ -41,55 +41,21 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
-const EditOrganizationalEntity = () => {
-  const { id } = useParams(); // Get the entity ID from the URL
+const EditOrganizationalEntityForm = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [initialValues, setInitialValues] = useState({
-    businessEntityType: "",
-    businessEntity: "",
-    businessEntityId: "",
-    editors: [],
-    description: "",
-    parentBusinessEntity: null,
-    childBusinessEntities: [],
-    relatedLocations: [],
-  });
-
-  // Fetch entity details on component mount
-  useEffect(() => {
-    const fetchEntityDetails = async () => {
-      try {
-        const response = await axios.get(`/api/v1/organizational-entities/${id}`);
-        const entityData = response.data.data;
-
-        setInitialValues({
-          businessEntityType: entityData.businessEntityType,
-          businessEntity: entityData.businessEntity,
-          businessEntityId: entityData.businessEntityId || '',
-          description: entityData.description || '',
-          parentBusinessEntity: entityData.parentBusinessEntity?.businessEntity || null,
-          childBusinessEntities: entityData.childBusinessEntities.map(child => child.businessEntity),
-          editors: entityData.editors.map(editor => editor.username),
-          relatedLocations: entityData.relatedLocations?.map(loc => loc.locationName) || []
-        });
-      } catch (error) {
-        console.error('Failed to fetch entity details', error);
-      }
-    };
-
-    fetchEntityDetails(); // Call the function to fetch entity details
-  }, [id]); // Dependency on ID to refetch if it changes
-
+  const location = useLocation();
+  const { state } = location; // Get the state passed from the previous component
   const [isToolOpen, setIsToolOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    businessEntityType: "",
-    businessEntity: "",
-    businessEntityId: "",
-    editors: [],
-    description: "",
-    parentEntity: [],
-    childEntities: [],
-    relatedLocations: "",
+  const [initialValues, setInitialValues] = useState({
+    businessEntityType: state?.businessEntityType || "",
+    businessEntity: state?.businessEntity || "",
+    businessEntityId: state?.businessEntityId || "",
+    editors: state?.editors || [],
+    description: state?.description || "",
+    parentBusinessEntity: state?.parentBusinessEntity || null,
+    childBusinessEntities: state?.childBusinessEntities || [],
+    relatedLocations: state?.relatedLocations || [],
   });
   const [showUserModal, setShowUserModal] = useState(false);
   const [users, setUsers] = useState([]);
@@ -101,89 +67,70 @@ const EditOrganizationalEntity = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; // Number of items to show per page
 
+  useEffect(() => {
+    const fetchEntityDetails = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/v1/organizational-entities/${id}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        });
+
+        console.log(response.data); // Log the response to check the structure
+        const entityData = response.data.data;
+
+        if (entityData) {
+          setInitialValues({
+            businessEntityType: entityData.businessEntityType || "",
+            businessEntity: entityData.businessEntity || "",
+            businessEntityId: entityData.businessEntityId || "",
+            editors: entityData.editors || [],
+            description: entityData.description || "",
+            parentBusinessEntity: entityData.parentBusinessEntity || null,
+            childBusinessEntities: entityData.childBusinessEntities || [],
+            relatedLocations: entityData.relatedLocations || [],
+          });
+        } else {
+          console.error('No entity data found');
+        }
+      } catch (error) {
+        if (error.response?.status === 401) {
+          console.error('Unauthorized access - redirecting to login');
+          navigate('/login'); // Redirect to login page
+        } else {
+          console.error('Failed to fetch entity details', error);
+        }
+      }
+    };
+
+    fetchEntityDetails();
+  }, [id, navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setInitialValues({ ...initialValues, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // New validation for required fields
-    if (!formData.businessEntityType || !formData.businessEntity) {
-      Toastify({
-        text: "Business Entity Type and Name are required",
-        duration: 3000,
-        backgroundColor: "#f44336",
-        close: true,
-      }).showToast();
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const payload = {
-        businessEntityType: formData.businessEntityType,
-        businessEntity: formData.businessEntity,
-        businessEntityId: formData.businessEntityId,
-        description: formData.description,
-        parentBusinessEntity: formData.parentEntity[0] || "",
-        editors: formData.editors,
-        childBusinessEntities: formData.childEntities || [],
-        relatedLocations: formData.relatedLocations || [],
-      };
-
-      const response = await axios.post(
-        "http://localhost:8000/api/v1/organizational-entities/create",
-        payload
-      );
-
+      const response = await axios.patch(`http://localhost:8000/api/v1/organizational-entities/${id}`, initialValues);
       Toastify({
-        text: "Entity created successfully!",
+        text: "Entity updated successfully!",
         duration: 3000,
         backgroundColor: "#4caf50",
         close: true,
       }).showToast();
-      navigate("/organizational-entities");
-      setFormData({
-        businessEntityType: "",
-        businessEntity: "",
-        businessEntityId: "",
-        editors: [],
-        description: "",
-        parentEntity: [],
-        childEntities: [],
-        relatedLocations: "",
-      });
+      navigate(`/organizational-entities`);
     } catch (error) {
-      console.log("Error:", error);
-      let errorMessage = "Check your all fields. and try again.";
-      if (error.response) {
-        switch (error.response.status) {
-          case 400:
-            errorMessage = error.response.data.message || "Bad Request. Please check your input.";
-            break;
-          case 409:
-            errorMessage = error.response.data.message || "Conflict. The entity may already exist. Please use a different name and id.";
-            break;
-          case 404:
-            errorMessage = error.response.data.message || "Not Found. The requested resource does not exist.";
-            break;
-          // Add more cases as needed for other status codes
-          default:
-            errorMessage = error.response.data.message || errorMessage;
-        }
-      }
-
+      console.error('Failed to update entity', error);
       Toastify({
-        text: errorMessage,
+        text: "Failed to update entity",
         duration: 3000,
         backgroundColor: "#f44336",
         close: true,
       }).showToast();
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -218,17 +165,17 @@ const EditOrganizationalEntity = () => {
   };
 
   const handleEntitySelect = (entity) => {
-    if (currentField === 'parentEntity') {
-      setFormData({
-        ...formData,
-        parentEntity: [entity.businessEntity],
-        childEntities: formData.childEntities
+    if (currentField === 'parentBusinessEntity') {
+      setInitialValues({
+        ...initialValues,
+        parentBusinessEntity: entity.businessEntity,
+        childBusinessEntities: initialValues.childBusinessEntities
       });
-    } else if (currentField === 'childEntities') {
-      setFormData({
-        ...formData,
-        childEntities: [...new Set([...formData.childEntities, entity.businessEntity])],
-        parentEntity: formData.parentEntity
+    } else if (currentField === 'childBusinessEntities') {
+      setInitialValues({
+        ...initialValues,
+        childBusinessEntities: [...new Set([...initialValues.childBusinessEntities, entity.businessEntity])],
+        parentBusinessEntity: initialValues.parentBusinessEntity
       });
     }
     setShowModal(false);
@@ -267,11 +214,11 @@ const EditOrganizationalEntity = () => {
   };
 
   const handleUserSelect = (user) => {
-    const newEditors = formData.editors
-      ? [...new Set([...formData.editors, user.username])]
+    const newEditors = initialValues.editors
+      ? [...new Set([...initialValues.editors, user.username])]
       : [user.username];
-    setFormData({
-      ...formData,
+    setInitialValues({
+      ...initialValues,
       editors: newEditors
     });
     setShowUserModal(false);
@@ -291,10 +238,10 @@ const EditOrganizationalEntity = () => {
 
   const handleSelectEntities = () => {
     const selectedEntities = searchResults.filter(entity => entity.selected);
-    setFormData({
-      ...formData,
-      parentEntity: selectedEntities.map(entity => entity.businessEntity),
-      childEntities: selectedEntities.map(entity => entity.businessEntity)
+    setInitialValues({
+      ...initialValues,
+      parentBusinessEntity: selectedEntities.map(entity => entity.businessEntity),
+      childBusinessEntities: selectedEntities.map(entity => entity.businessEntity)
     });
     setShowModal(false);
     // Add your logic here to handle the selected entities
@@ -322,7 +269,7 @@ const EditOrganizationalEntity = () => {
     <div className="page-content">
       {/* Header Section */}
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h1 className="header-text">Organizational Entity: New Entity</h1>
+        <h1 className="header-text">Organizational Entity: Edit Entity</h1>
         <div className="d-flex align-items-center">
           <NavLink
             className="btn btn-outline-secondary me-2"
@@ -335,7 +282,7 @@ const EditOrganizationalEntity = () => {
           {/* <button
             type="submit"
             className="btn btn-outline-success"
-            disabled={!formData.businessEntityType || !formData.businessEntity}
+            disabled={!initialValues.businessEntityType || !initialValues.businessEntity}
           >
             {loading ? "Saving..." : "Save"}
           </button> */}
@@ -349,7 +296,7 @@ const EditOrganizationalEntity = () => {
           <button
             type="submit"
             className="btn btn-outline-success me-2"
-            disabled={!formData.businessEntityType || !formData.businessEntity}
+            disabled={!initialValues.businessEntityType || !initialValues.businessEntity}
           >
             <FaCheck className="me-1" />
             Save
@@ -430,7 +377,7 @@ const EditOrganizationalEntity = () => {
                     <select
                       id="businessEntityType"
                       name="businessEntityType"
-                      value={formData.businessEntityType}
+                      value={initialValues.businessEntityType}
                       onChange={handleChange}
                       className="form-select1"
                       required
@@ -451,7 +398,7 @@ const EditOrganizationalEntity = () => {
                       type="text"
                       id="businessEntity"
                       name="businessEntity"
-                      value={formData.businessEntity}
+                      value={initialValues.businessEntity}
                       onChange={handleChange}
                       className="form-control1"
                       required
@@ -468,7 +415,7 @@ const EditOrganizationalEntity = () => {
                       type="text"
                       id="businessEntityId"
                       name="businessEntityId"
-                      value={formData.businessEntityId || ""}
+                      value={initialValues.businessEntityId || ""}
                       onChange={handleChange}
                       className="form-control1"
                     />
@@ -487,7 +434,7 @@ const EditOrganizationalEntity = () => {
                         backgroundColor: '#fff'
                       }}
                     >
-                      {formData.editors.map((editor, index) => (
+                      {initialValues.editors.map((editor, index) => (
                         <span
                           key={index}
                           className="badge bg-light text-dark d-flex align-items-center"
@@ -505,9 +452,9 @@ const EditOrganizationalEntity = () => {
                             className="btn-close ms-2"
                             style={{ fontSize: '0.5rem' }}
                             onClick={() => {
-                              const newEditors = formData.editors.filter(e => e !== editor);
-                              setFormData({
-                                ...formData,
+                              const newEditors = initialValues.editors.filter(e => e !== editor);
+                              setInitialValues({
+                                ...initialValues,
                                 editors: newEditors
                               });
                             }}
@@ -533,7 +480,7 @@ const EditOrganizationalEntity = () => {
                     <textarea
                       id="description"
                       name="description"
-                      value={formData.description}
+                      value={initialValues.description}
                       onChange={handleChange}
                       className="form-control1"
                       rows="3"
@@ -544,7 +491,7 @@ const EditOrganizationalEntity = () => {
                   {/* Relationships */}
                   <h4 className="mt-4 mb-3">Relationships</h4>
                   <div className="mb-3 d-flex">
-                    <label htmlFor="parentEntity" className="form-label label w-20">
+                    <label htmlFor="parentBusinessEntity" className="form-label label w-20">
                       Parent Organizational Entity <span className="text-danger">*</span>
                     </label>
                     <div
@@ -557,9 +504,8 @@ const EditOrganizationalEntity = () => {
                         backgroundColor: '#fff'
                       }}
                     >
-                      {formData.parentEntity.map((entity, index) => (
+                      {initialValues.parentBusinessEntity && (
                         <span
-                          key={index}
                           className="badge bg-light text-dark d-flex align-items-center"
                           style={{
                             padding: '5px 10px !important',
@@ -568,33 +514,32 @@ const EditOrganizationalEntity = () => {
                             borderRadius: '3px !important'
                           }}
                         >
-                          {entity}
+                          {initialValues.parentBusinessEntity}
                           <button
                             type="button"
                             className="btn-close ms-2"
                             style={{ fontSize: '0.5rem' }}
                             onClick={() => {
-                              const newParentEntity = formData.parentEntity.filter(e => e !== entity);
-                              setFormData({
-                                ...formData,
-                                parentEntity: newParentEntity
+                              setInitialValues({
+                                ...initialValues,
+                                parentBusinessEntity: null
                               });
                             }}
                           ></button>
                         </span>
-                      ))}
+                      )}
                     </div>
                     <button
                       type="button"
                       className="btn btn-secondary border-radius-2"
-                      onClick={() => openEntityModal('parentEntity')}
+                      onClick={() => openEntityModal('parentBusinessEntity')}
                     >
                       <BiSearchAlt2 />
                     </button>
                   </div>
                   <div className="mb-3 d-flex">
                     <label
-                      htmlFor="childEntities"
+                      htmlFor="childBusinessEntities"
                       className="form-label label w-20"
                     >
                       Child Organizational Entities
@@ -609,7 +554,7 @@ const EditOrganizationalEntity = () => {
                         backgroundColor: '#fff'
                       }}
                     >
-                      {formData.childEntities.map((entity, index) => (
+                      {initialValues.childBusinessEntities.map((entity, index) => (
                         <span
                           key={index}
                           className="badge bg-light text-dark d-flex align-items-center"
@@ -626,10 +571,10 @@ const EditOrganizationalEntity = () => {
                             className="btn-close ms-2"
                             style={{ fontSize: '0.5rem' }}
                             onClick={() => {
-                              const newChildEntities = formData.childEntities.filter(e => e !== entity);
-                              setFormData({
-                                ...formData,
-                                childEntities: newChildEntities
+                              const newChildEntities = initialValues.childBusinessEntities.filter(e => e !== entity);
+                              setInitialValues({
+                                ...initialValues,
+                                childBusinessEntities: newChildEntities
                               });
                             }}
                           ></button>
@@ -639,7 +584,7 @@ const EditOrganizationalEntity = () => {
                     <button
                       type="button"
                       className="btn btn-secondary border-radius-2"
-                      onClick={() => openEntityModal('childEntities')}
+                      onClick={() => openEntityModal('childBusinessEntities')}
                     >
                       <BiSearchAlt2 />
                     </button>
@@ -655,7 +600,7 @@ const EditOrganizationalEntity = () => {
                       type="text"
                       id="relatedLocations"
                       name="relatedLocations"
-                      value={formData.relatedLocations || ""}
+                      value={initialValues.relatedLocations.join(', ') || ""}
                       onChange={handleChange}
                       className="form-control1"
                     />
@@ -676,7 +621,7 @@ const EditOrganizationalEntity = () => {
                     <button
                       type="submit"
                       className="btn btn-outline-success"
-                      disabled={!formData.businessEntityType || !formData.businessEntity}
+                      disabled={!initialValues.businessEntityType || !initialValues.businessEntity}
                     >
                       {loading ? "Saving..." : "Save"}
                     </button>
@@ -877,11 +822,11 @@ const EditOrganizationalEntity = () => {
                   onClick={() => {
                     const selectedUsers = users.filter(user => user.selected);
                     const newEditors = [
-                      ...formData.editors,
+                      ...initialValues.editors,
                       ...selectedUsers.map(user => user.fullName)
                     ];
-                    setFormData({
-                      ...formData,
+                    setInitialValues({
+                      ...initialValues,
                       editors: [...new Set(newEditors)]
                     });
                     setShowUserModal(false);
@@ -899,5 +844,5 @@ const EditOrganizationalEntity = () => {
   );
 };
 
-export default EditOrganizationalEntity;
+export default EditOrganizationalEntityForm;
 

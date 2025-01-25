@@ -40,6 +40,7 @@ import NewEmployee from "../pages/Organization/Employees/NewEmployee.jsx";
 import Locations from "../pages/Organization/Locations/Locations.jsx";
 import NewLocation from "../pages/Organization/Locations/NewLocation.jsx";
 import LocationMap from "../pages/Organization/LocationMap/LocationMap.jsx";
+import EditOrganizationalEntity from "../pages/Organization/OrganizationalEntities/OrganizationalEntityForm/EditOrganizationEntity.jsx";
 
 
 const authProtectedRoutes = [
@@ -59,7 +60,7 @@ const authProtectedRoutes = [
   { path: '/location-map', component: <LocationMap/> },
 
   // Add the route for editing an organizational entity
-  { path: '/organizational-entities/edit/:id', component: <OrganizationalEntityForm /> },
+  { path: '/organizational-entities/edit/:id', component: <EditOrganizationalEntity /> },
 
   //User Profile
   { path: "/profile", component: <UserProfile /> },

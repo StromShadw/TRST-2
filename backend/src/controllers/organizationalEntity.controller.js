@@ -136,20 +136,26 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
     console.log("Incoming Update Data:", updateData);
 
     // First check if the entity exists
-    const existingEntity = await BusinessEntity.findById(id)
+    const existingEntity = await BusinessEntity.findById(id);
     if (!existingEntity) {
-        throw new ApiError(404, "Organizational Entity not found")
+        throw new ApiError(404, "Organizational Entity not found");
     }
 
     // Check if the provided ID matches the entity being updated
     if (updateData.id && updateData.id !== id) {
         throw new ApiError(400, "ID cannot be changed");
     }
-    
-    //check if buisnessEntityId is provided and unique
-    // if (updateData.businessEntityId && updateData.businessEntityId !== existingEntity.businessEntityId) {
-    //     throw new ApiError(400, "businessEntityId cannot be changed");
-    // }
+
+    // Check if businessEntityId is provided and unique
+    if (updateData.businessEntityId && updateData.businessEntityId !== existingEntity.businessEntityId) {
+        const duplicateEntity = await BusinessEntity.findOne({
+            businessEntityId: updateData.businessEntityId,
+            _id: { $ne: id } // exclude current entity
+        });
+        if (duplicateEntity) {
+            throw new ApiError(409, "businessEntityId must be unique");
+        }
+    }
 
     // Check if businessEntityType is provided and valid
     if (updateData.businessEntityType && !BUSINESS_ENTITY_TYPES.includes(updateData.businessEntityType)) {
@@ -161,9 +167,9 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
         const duplicateEntity = await BusinessEntity.findOne({
             businessEntity: updateData.businessEntity,
             _id: { $ne: id } // exclude current entity
-        })
+        });
         if (duplicateEntity) {
-            throw new ApiError(409, "An entity with this name already exists. Please use a different name.")
+            throw new ApiError(409, "An entity with this name already exists. Please use a different name.");
         }
     }
 
@@ -200,6 +206,18 @@ const updateOrganizationalEntity = asyncHandler(async (req, res) => {
     if (!updateData.parentBusinessEntity) {
         console.log("Deleting parentBusinessEntity from updateData");
         delete updateData.parentBusinessEntity; // Remove if undefined or null
+    }
+
+    // Find child business entities by name and convert to ObjectIds
+    if (updateData.childBusinessEntities?.length) {
+        const childEntities = await BusinessEntity.find({
+            businessEntity: { $in: updateData.childBusinessEntities }
+        }).distinct('_id');
+
+        if (childEntities.length === 0) {
+            throw new ApiError(400, "No valid child business entities found");
+        }
+        updateData.childBusinessEntities = childEntities; // Update to use ObjectIds
     }
 
     const updatedEntity = await BusinessEntity.findByIdAndUpdate(

@@ -118,7 +118,21 @@ const OrganizationalEntitiesPage = () => {
   };
 
   const handleEdit = (id) => {
-    navigate(`/organizational-entities/edit/${id}`);
+    const entityToEdit = rows.find(row => row.id === id);
+    if (entityToEdit) {
+      navigate(`/organizational-entities/edit/${id}`, { state: { 
+          businessEntityType: entityToEdit.entityType,
+          businessEntity: entityToEdit.businessEntity,
+          businessEntityId: entityToEdit.businessEntityId,
+          description: entityToEdit.description,
+          parentBusinessEntity: entityToEdit.parentEntity,
+          childBusinessEntities: entityToEdit.childEntities.split(' | '),
+          relatedLocations: entityToEdit.location,
+          editors: []
+      } });
+    } else {
+      console.error('Entity not found for editing');
+    }
   };
 
   const handleBulkDelete = async () => {
